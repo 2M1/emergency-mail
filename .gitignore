@@ -315,3 +315,10 @@ TSWLatexianTemp*
 
 # Mac:
 .DS_Store
+
+# Environments:
+.env
+.env.release
+.env.test
+.env.debug
+.env.local

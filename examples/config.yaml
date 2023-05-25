@@ -1,0 +1,7 @@
+imap:
+  host: "imap.gmail.com" # leave empty to use the environment variable EM_SMTP_HOST
+  port: 993
+  username: "" # leave empty to use the environment variable EM_SMTP_USERNAME
+  password: "" # leave empty to use the environment variable EM_SMTP_PASSWORD
+interval: 25 # in minutes
+number_of_copies: 1 # number of duplicate copies to be printed
