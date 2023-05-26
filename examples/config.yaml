@@ -5,3 +5,4 @@ imap:
   password: "" # leave empty to use the environment variable EM_SMTP_PASSWORD
 interval: 25 # in minutes
 number_of_copies: 1 # number of duplicate copies to be printed
+printer: "HP_LaserJet_400_M401dn" # printer name // TODO: add instructions on how to get the printer name
