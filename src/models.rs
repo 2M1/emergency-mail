@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
+pub mod Emergency;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Emergency {
-    pub keyword: String,
-    pub number: i64,
-}
+mod Builder;
+
+#[cfg(test)]
+pub mod EmergencyTest;
