@@ -57,6 +57,6 @@ const TEST_MAIL_CONTENT: &str = r#"
 
 #[test]
 fn test_parse_emergency() {
-    let ems = Emergency::from_str(TEST_MAIL_CONTENT).unwrap();
+    let _ems = Emergency::from_str(TEST_MAIL_CONTENT).unwrap();
     // assert_eq!(ems.town, "Brandenburg an der Havel".to_string());
 }

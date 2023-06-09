@@ -4,4 +4,4 @@ mod Builder;
 pub mod RadioIdentifier;
 
 #[cfg(test)]
-pub mod EmergencyTest;
+pub mod emergency_test;

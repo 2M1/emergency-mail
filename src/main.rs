@@ -13,7 +13,7 @@ fn main() {
     println!("config path: {}", config_path);
     let config = Config::parse(&config_path).expect("couldn't parse config");
 
-    let connection = connection::imap::connect(&config).expect("couldn't connect to smtp server");
+    let _connection = connection::imap::connect(&config).expect("couldn't connect to imap server");
 
     println!("{:?}", config);
 }

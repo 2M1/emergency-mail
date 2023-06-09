@@ -1,14 +1,10 @@
-use log::{logger, LevelFilter};
+use log::LevelFilter;
 use log4rs::{
     append::{
         console::ConsoleAppender,
         rolling_file::{
-            policy::{
-                compound::{
-                    roll::fixed_window::FixedWindowRoller, trigger::size::SizeTrigger,
-                    CompoundPolicy, CompoundPolicyConfig,
-                },
-                Policy,
+            policy::compound::{
+                roll::fixed_window::FixedWindowRoller, trigger::size::SizeTrigger, CompoundPolicy,
             },
             RollingFileAppender,
         },
@@ -16,11 +12,15 @@ use log4rs::{
     config::{Appender, Root},
     encode::pattern::PatternEncoder,
     filter::threshold::ThresholdFilter,
-    Config, Logger,
+    Config,
 };
 
 const MAX_LOG_SIZE: u64 = 10 * 1024; // 10KB
 const MAX_LOG_COUNT: u32 = 10;
+#[cfg(not(debug_assertions))]
+const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Warn;
+#[cfg(debug_assertions)]
+const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
 pub fn init_logging() {
     let stdout = ConsoleAppender::builder()
@@ -39,7 +39,7 @@ pub fn init_logging() {
     let rolling = RollingFileAppender::builder()
         .append(true)
         .encoder(Box::new(PatternEncoder::new(
-            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {m}{n}",
+            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
         )))
         .build("logs/emergency_mails.log", Box::new(policy))
         .unwrap();
@@ -48,7 +48,7 @@ pub fn init_logging() {
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
         .appender(
             Appender::builder()
-                .filter(Box::new(ThresholdFilter::new(LevelFilter::Warn)))
+                .filter(Box::new(ThresholdFilter::new(FILE_LOG_LEVEL)))
                 .build("rolling", Box::new(rolling)),
         )
         .build(

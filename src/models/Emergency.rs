@@ -3,7 +3,6 @@ use log::warn;
 use std::str::FromStr;
 
 use super::RadioIdentifier::RadioIdentifier;
-use crate::models::Builder::Builder;
 
 #[derive(Debug, Default)]
 pub struct Emergency {

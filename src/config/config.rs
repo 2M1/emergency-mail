@@ -1,3 +1,4 @@
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::{env, fs, str::FromStr, time::Duration};
 
@@ -51,14 +52,24 @@ impl FromStr for Config {
         if config.imap.host == "" {
             let host = env::var(ENV_IMAP_HOST)
                 .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_HOST))?;
-            let username = env::var(ENV_IMAP_USERNAME)
-                .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_USERNAME))?;
+            config.imap.host = host;
+            info!("acquired imap host from environment: {}", config.imap.host);
+        }
+
+        if config.imap.password.is_empty() {
             let password = env::var(ENV_IMAP_PASSWORD)
                 .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_PASSWORD))?;
 
             config.imap.password = password;
-            config.imap.username = username;
-            config.imap.host = host;
+            info!("acquired imap password from environment");
+
+            if config.imap.username.is_empty() {
+                // only allow empty username, if password is also empty (makes no sense otherwise)
+                let username = env::var(ENV_IMAP_USERNAME)
+                    .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_USERNAME))?;
+                config.imap.username = username;
+                info!("acquired imap username from environment");
+            }
         }
 
         return Ok(config);
