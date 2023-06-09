@@ -25,7 +25,7 @@ const MAX_LOG_COUNT: u32 = 10;
 pub fn init_logging() {
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new(
-            "{%d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
+            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
         )))
         .build();
 
@@ -39,7 +39,7 @@ pub fn init_logging() {
     let rolling = RollingFileAppender::builder()
         .append(true)
         .encoder(Box::new(PatternEncoder::new(
-            "{%d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {m}{n}",
+            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {m}{n}",
         )))
         .build("logs/emergency_mails.log", Box::new(policy))
         .unwrap();
