@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{env, fs, time::Duration};
+use std::{env, fs, str::FromStr, time::Duration};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IMAPConfig {
@@ -10,10 +10,17 @@ pub struct IMAPConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PrintingConfig {
+    pub printer: Option<String>, // None indicates, that the default system printer should be used
+    pub min_copies: u8,
+    pub amt: u8,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub imap: IMAPConfig,
     pub interval: u64,
-    pub number_of_copies: u8,
+    pub printing: PrintingConfig,
 }
 
 const ENV_IMAP_HOST: &str = "EM_IMAP_HOST";
@@ -25,18 +32,20 @@ impl Config {
     pub fn parse(path: &str) -> Result<Config, String> {
         let config =
             fs::read_to_string(path).map_err(|_e| format!("couldn't open file at {}", path))?;
+        return Config::from_str(&config);
+    }
 
-        let mut config = serde_yaml::from_str::<Config>(&config).map_err(|e| -> String {
-            if let Some(location) = e.location() {
-                return format!(
-                    "couldn't parse yaml: {} at line {}, column {}",
-                    e,
-                    location.line(),
-                    location.column()
-                );
-            } else {
-                return format!("couldn't parse yaml: {}", e);
-            }
+    pub fn interval_as_duration(&self) -> Duration {
+        return Duration::from_secs(self.interval * SECONDS_PER_MINUTE);
+    }
+}
+
+impl FromStr for Config {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut config = serde_yaml::from_str::<Config>(&s).map_err(|e| -> String {
+            return format!("couldn't parse yaml: {}", e);
         })?;
 
         if config.imap.host == "" {
@@ -53,9 +62,5 @@ impl Config {
         }
 
         return Ok(config);
-    }
-
-    pub fn interval_as_duration(&self) -> Duration {
-        return Duration::from_secs(self.interval * SECONDS_PER_MINUTE);
     }
 }

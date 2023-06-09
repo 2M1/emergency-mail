@@ -1,5 +1,8 @@
-#[cfg(test)]
+use std::str::FromStr;
 
+use crate::models::Emergency::Emergency;
+
+#[cfg(test)]
 const TEST_MAIL_CONTENT: &str = r#"
 ~~Ort~~Brandenburg an der Havel~~
 
@@ -53,4 +56,7 @@ const TEST_MAIL_CONTENT: &str = r#"
 "#;
 
 #[test]
-fn test_parse_emergency() {}
+fn test_parse_emergency() {
+    let ems = Emergency::from_str(TEST_MAIL_CONTENT).unwrap();
+    // assert_eq!(ems.town, "Brandenburg an der Havel".to_string());
+}
