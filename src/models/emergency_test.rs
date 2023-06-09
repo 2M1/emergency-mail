@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::models::Emergency::Emergency;
+use crate::models::emergency::Emergency;
 
 #[cfg(test)]
 const TEST_MAIL_CONTENT: &str = r#"

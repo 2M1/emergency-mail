@@ -4,4 +4,4 @@ pub mod config;
 pub mod logging;
 
 #[cfg(test)]
-pub mod configTests;
+pub mod config_tests;

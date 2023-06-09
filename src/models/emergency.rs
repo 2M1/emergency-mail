@@ -2,7 +2,9 @@ use chrono::NaiveDate;
 use log::warn;
 use std::str::FromStr;
 
-use super::RadioIdentifier::RadioIdentifier;
+use crate::unrecoverable;
+
+use super::{radio_identifier::RadioIdentifier, recoverable::Recoverable, recoverable::};
 
 #[derive(Debug, Default)]
 pub struct Emergency {
@@ -26,12 +28,16 @@ pub struct Emergency {
     pub alarm_time: NaiveDate,
 }
 
-fn consume<'a>(s: &'a str, prefix: &str) -> Result<&'a str, ()> {
-    if s.starts_with(prefix) {
-        return Ok(&s[prefix.len()..]);
-    } else {
-        return Err(());
+fn skip_whitespace_count_lines<'a>(s: &'a str, lines: &mut u64) -> &'a str {
+    let mut chars = s.chars();
+    let mut current_char = chars.next();
+    while current_char.is_some() && current_char.unwrap().is_whitespace() {
+        if current_char.unwrap() == '\n' {
+            *lines += 1;
+        }
+        current_char = chars.next();
     }
+    return chars.as_str();
 }
 
 impl Emergency {
@@ -52,7 +58,7 @@ impl Emergency {
 impl FromStr for Emergency {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Recoverable<Self, Self::Err> {
         let mut builder = Emergency::default();
         let lines = s.lines();
         let mut line_nr = 0;
@@ -66,14 +72,16 @@ impl FromStr for Emergency {
 
             let mut parts = current_line.split("~~").peekable();
 
+            let mut did_err = false;
             while parts.peek().is_some() {
                 let Some(property) = parts.next() else {
-                    return Err(format!("Error in line {}: Empty property", line_nr));  
+                    unrecoverable!("Error in line {}: Empty property", line_nr);  
                     // should not happen, because of the while peek loop
                 };
 
                 let Some(value) = parts.next() else {
-                    return Err(format!("Error in line {}: Missing value for property {}", line_nr, property));
+                    did_err = true; // indicates that the value is missing, but continue parsing
+                    continue;
                 };
 
                 match property {
@@ -133,6 +141,7 @@ impl FromStr for Emergency {
                     "EMListe" => {}
                     _ => {
                         warn!("Unknown property {} in line {}", property, line_nr);
+                        did_err = true;
                     }
                 }
 
