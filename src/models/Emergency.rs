@@ -1,70 +1,30 @@
-use std::{marker::PhantomData, str::FromStr};
+use chrono::NaiveDate;
+use log::warn;
+use std::str::FromStr;
 
+use super::RadioIdentifier::RadioIdentifier;
 use crate::models::Builder::Builder;
 
-#[derive(Debug)]
-pub struct RadioIdentifier {
-    pub org: String,
-    pub county: String,
-    pub agency: u64,
-    pub car_type: u64,
-    pub number: u64,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Emergency {
     pub town: String,
     pub district: String,
     pub location: String,
     pub street: String,
     pub house_number: String,
-    pub object: String,
-    pub fire_department_plan: String,
-    pub object_part: String,
-    pub object_number: i64,
-    pub emergency_type: String,
-    pub keyword: String,
-    pub emergency_number: u64,
-    pub note: String,
-    pub patient_name: String,
-    pub dispatched_units: Vec<RadioIdentifier>,
-    pub unit_alarm_times: Vec<String>,
-    pub alarm_time: String,
-}
-
-#[derive(Debug, Default)]
-struct EmergencyBuilder {
-    pub town: Option<String>,
-    pub district: Option<String>,
-    pub location: Option<String>,
-    pub street: Option<String>,
-    pub house_number: Option<String>,
     pub object: Option<String>,
     pub fire_department_plan: Option<String>,
     pub object_part: Option<String>,
     pub object_number: Option<i64>,
-    pub emergency_type: Option<String>,
-    pub keyword: Option<String>,
-    pub emergency_number: Option<u64>,
+    pub emergency_type: String,
+    pub keyword: String,
+    pub code3: String,
+    pub emergency_number: u64,
     pub note: Option<String>,
     pub patient_name: Option<String>,
-    pub dispatched_units: Option<Vec<RadioIdentifier>>,
-    pub unit_alarm_times: Option<Vec<String>>,
-    pub alarm_time: Option<String>,
-}
-
-impl EmergencyBuilder {
-    fn new() -> EmergencyBuilder {
-        return EmergencyBuilder::default();
-    }
-}
-
-impl Builder<Emergency> for EmergencyBuilder {
-    type E = String;
-
-    fn build(&self) -> Result<Emergency, Self::E> {
-        return Err(String::from("Not implemented"));
-    }
+    pub dispatched_units: Vec<RadioIdentifier>,
+    pub unit_alarm_times: Vec<String>,
+    pub alarm_time: NaiveDate,
 }
 
 fn consume<'a>(s: &'a str, prefix: &str) -> Result<&'a str, ()> {
@@ -75,11 +35,26 @@ fn consume<'a>(s: &'a str, prefix: &str) -> Result<&'a str, ()> {
     }
 }
 
+impl Emergency {
+    fn verify_minimum_fields(&mut self) -> bool {
+        return !self.town.is_empty()
+            && !self.location.is_empty()
+            && !self.street.is_empty()
+            && !self.house_number.is_empty()
+            && !self.emergency_type.is_empty()
+            && !self.keyword.is_empty()
+            && !self.code3.is_empty()
+            && !self.dispatched_units.is_empty()
+            && !self.unit_alarm_times.is_empty()
+            && self.emergency_number != 0;
+    }
+}
+
 impl FromStr for Emergency {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut builder = EmergencyBuilder::new();
+        let mut builder = Emergency::default();
         let lines = s.lines();
         let mut line_nr = 0;
 
@@ -104,19 +79,17 @@ impl FromStr for Emergency {
 
                 match property {
                     "Ort" => {
-                        builder.town = Some(value.to_string());
+                        builder.town = value.to_string();
                     }
-                    "Ortsteil" => {
-                        builder.district = Some(value.to_string());
-                    }
+                    "Ortsteil" => builder.district = value.to_string(),
                     "Ortslage" => {
-                        builder.location = Some(value.to_string());
+                        builder.location = value.to_string();
                     }
                     "Strasse" => {
-                        builder.street = Some(value.to_string());
+                        builder.street = value.to_string();
                     }
                     "Hausnummer" => {
-                        builder.house_number = Some(value.to_string());
+                        builder.house_number = value.to_string();
                     }
                     "Objekt" => {
                         builder.object = Some(value.to_string());
@@ -136,18 +109,21 @@ impl FromStr for Emergency {
                         })?);
                     }
                     "Einsatzart" => {
-                        builder.emergency_type = Some(value.to_string());
+                        builder.emergency_type = value.to_string();
                     }
                     "Alarmgrund" => {
-                        builder.keyword = Some(value.to_string());
+                        builder.keyword = value.to_string();
+                    }
+                    "Sondersignal" => {
+                        builder.code3 = value.to_string();
                     }
                     "Einsatznummer" => {
-                        builder.emergency_number = Some(value.parse::<u64>().map_err(|_e| {
+                        builder.emergency_number = value.parse::<u64>().map_err(|_e| {
                             format!(
                                 "Error in line {}: Could not parse {} as u64",
                                 line_nr, value
                             )
-                        })?);
+                        })?;
                     }
                     "Besonderheiten" => {
                         builder.note = Some(value.to_string());
@@ -156,6 +132,9 @@ impl FromStr for Emergency {
                         builder.patient_name = Some(value.to_string());
                     }
                     "EMListe" => {}
+                    _ => {
+                        warn!("Unknown property {} in line {}", property, line_nr);
+                    }
                 }
 
                 let Some(spacer) = parts.next() else {

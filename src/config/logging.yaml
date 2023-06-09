@@ -1,0 +1,34 @@
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{%d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}"
+    filters:
+      - kind: threshold
+        level: info
+  rolling:
+    kind: rolling_file
+    path: "logs/app.log"
+    append: true
+    encoder:
+      pattern: "{%d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {m}{n}"
+    policy:
+      trigger:
+        trigger:
+          kind: size
+          size: 50kb
+      roller:
+        kind: fixed_window
+        base: 1
+        count: 10
+        pattern: "logs/app-%d{yyyy-MM-dd}.log"
+root:
+  level: info
+  appenders:
+    - rolling
+loggers:
+  special:
+    level: trace
+    appenders:
+      - stdout
+    additive: false
