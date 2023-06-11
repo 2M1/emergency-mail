@@ -1,16 +1,11 @@
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::NaiveDateTime;
 use log::{info, warn};
 use std::{
-    fmt::format,
     iter::Peekable,
-    ops::{Add, Deref},
     str::{Chars, FromStr},
-    time::Instant,
 };
 
-use crate::unrecoverable;
-
-use super::{either::Either, radio_identifier::RadioIdentifier, recoverable::Recoverable};
+use super::{either::Either, radio_identifier::RadioIdentifier};
 
 #[derive(Debug, Default)]
 pub struct Emergency {
@@ -214,11 +209,11 @@ impl FromStr for Emergency {
                     line_nr,
                 )?,
                 "ALARM" => {
-                    let status = read_value(&mut in_stream);
+                    let _status = read_value(&mut in_stream);
                     expect_literal(&mut in_stream, "~~", line_nr)?;
-                    let unit = read_value(&mut in_stream);
+                    let _unit = read_value(&mut in_stream);
                     expect_literal(&mut in_stream, "~~", line_nr)?;
-                    let id = read_value(&mut in_stream);
+                    let _id = read_value(&mut in_stream);
                     expect_literal(&mut in_stream, "~~", line_nr)?;
                     let alarm_time = read_value(&mut in_stream);
                     ems.unit_alarm_times.push(alarm_time);
