@@ -1,10 +1,15 @@
 use chrono::NaiveDate;
 use log::warn;
-use std::str::FromStr;
+use std::{
+    iter::Peekable,
+    ops::{Add, Deref},
+    str::{Chars, FromStr},
+    time::Instant,
+};
 
 use crate::unrecoverable;
 
-use super::{radio_identifier::RadioIdentifier, recoverable::Recoverable, recoverable::};
+use super::{radio_identifier::RadioIdentifier, recoverable::Recoverable};
 
 #[derive(Debug, Default)]
 pub struct Emergency {
@@ -28,16 +33,50 @@ pub struct Emergency {
     pub alarm_time: NaiveDate,
 }
 
-fn skip_whitespace_count_lines<'a>(s: &'a str, lines: &mut u64) -> &'a str {
-    let mut chars = s.chars();
-    let mut current_char = chars.next();
-    while current_char.is_some() && current_char.unwrap().is_whitespace() {
-        if current_char.unwrap() == '\n' {
+fn skip_whitespace_count_lines(chars: &mut Peekable<Chars>, lines: &mut u64) -> () {
+    while let Some(next) = chars.peek() {
+        // check next character without advancing, so that a non-whitespace
+        // is not consumed and therefore availible for the next step (e.g. parsing values)
+        if !next.is_whitespace() {
+            break;
+        }
+
+        if next == &'\n' {
             *lines += 1;
         }
-        current_char = chars.next();
+
+        let _ = chars.next(); // advance iterator
     }
-    return chars.as_str();
+}
+
+fn read_value(chars: &mut Peekable<Chars>) -> String {
+    let mut value = String::new();
+    while let Some(next) = chars.peek() {
+        if next == &'~' {
+            break;
+        }
+        value.push(*next);
+        let _ = chars.next();
+    }
+    return value;
+}
+
+fn expect_literal(chars: &mut Peekable<Chars>, literal: &str, line_nr: u64) -> Result<(), String> {
+    for c in literal.chars() {
+        print!("testing {:?}", c);
+        let Some(current_char) = chars.next() else {
+            return Err(format!("Expected literal \"{}\" in line {}, got eoi instead.", literal, line_nr));
+        };
+        println!(" against {:?}", current_char);
+        if c != current_char {
+            return Err(format!(
+                "Expected \'{}\' in literal {} in line {}, got \'{}\' instead.",
+                c, literal, line_nr, current_char
+            ));
+        }
+    }
+
+    return Ok(());
 }
 
 impl Emergency {
@@ -55,106 +94,63 @@ impl Emergency {
     }
 }
 
+macro_rules! simple_property {
+    ($s:expr, $($p:ident).+) => {
+        $($p).+ = read_value(&mut $s)
+    };
+}
+
 impl FromStr for Emergency {
     type Err = String;
 
-    fn from_str(s: &str) -> Recoverable<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut builder = Emergency::default();
-        let lines = s.lines();
         let mut line_nr = 0;
 
-        for current_line in lines {
-            line_nr += 1;
-            let current_line = current_line.trim();
-            if current_line == "" {
-                continue;
-            }
+        let mut in_stream = s.chars().peekable();
+        while in_stream.peek().is_some() {
+            skip_whitespace_count_lines(&mut in_stream, &mut line_nr);
+            expect_literal(&mut in_stream, "~~", line_nr)?;
 
-            let mut parts = current_line.split("~~").peekable();
+            println!("{:?}", in_stream.peek());
+            let property = read_value(&mut in_stream);
 
-            let mut did_err = false;
-            while parts.peek().is_some() {
-                let Some(property) = parts.next() else {
-                    unrecoverable!("Error in line {}: Empty property", line_nr);  
-                    // should not happen, because of the while peek loop
-                };
+            println!("{}", property.as_str());
+            expect_literal(&mut in_stream, "~~", line_nr)?;
 
-                let Some(value) = parts.next() else {
-                    did_err = true; // indicates that the value is missing, but continue parsing
-                    continue;
-                };
-
-                match property {
-                    "Ort" => {
-                        builder.town = value.to_string();
-                    }
-                    "Ortsteil" => builder.district = value.to_string(),
-                    "Ortslage" => {
-                        builder.location = value.to_string();
-                    }
-                    "Strasse" => {
-                        builder.street = value.to_string();
-                    }
-                    "Hausnummer" => {
-                        builder.house_number = value.to_string();
-                    }
-                    "Objekt" => {
-                        builder.object = Some(value.to_string());
-                    }
-                    "FWPlan" => {
-                        builder.fire_department_plan = Some(value.to_string());
-                    }
-                    "Objektteil" => {
-                        builder.object_part = Some(value.to_string());
-                    }
-                    "Objektnummer" => {
-                        builder.object_number = Some(value.parse::<i64>().map_err(|_e| {
-                            format!(
-                                "Error in line {}: Could not parse {} as i64",
-                                line_nr, value
-                            )
-                        })?);
-                    }
-                    "Einsatzart" => {
-                        builder.emergency_type = value.to_string();
-                    }
-                    "Alarmgrund" => {
-                        builder.keyword = value.to_string();
-                    }
-                    "Sondersignal" => {
-                        builder.code3 = value.to_string();
-                    }
-                    "Einsatznummer" => {
-                        builder.emergency_number = value.parse::<u64>().map_err(|_e| {
-                            format!(
-                                "Error in line {}: Could not parse {} as u64",
-                                line_nr, value
-                            )
-                        })?;
-                    }
-                    "Besonderheiten" => {
-                        builder.note = Some(value.to_string());
-                    }
-                    "Name" => {
-                        builder.patient_name = Some(value.to_string());
-                    }
-                    "EMListe" => {}
-                    _ => {
-                        warn!("Unknown property {} in line {}", property, line_nr);
-                        did_err = true;
-                    }
+            match property.as_str() {
+                "Ort" => {
+                    simple_property!(in_stream, builder.town);
+                    println!("{}", builder.town);
+                }
+                "Ortsteil" => {
+                    simple_property!(in_stream, builder.district);
+                    println!("{}", builder.district);
+                }
+                "Ortslage" => {
+                    simple_property!(in_stream, builder.location);
+                    println!("{}", builder.location);
                 }
 
-                let Some(spacer) = parts.next() else {
-                    continue;
-                };
-                if !spacer.is_empty() {
-                    return Err(format!(
-                        "Error in line {}: Expected four ~ between two properties., got {}",
-                        line_nr, spacer
-                    ));
+                "Status" => expect_literal(
+                    &mut in_stream,
+                    "Fahrzeug~~Zuget~~Alarm~~Ausger=FCckt",
+                    line_nr,
+                )?,
+
+                _ => {
+                    let _ = read_value(&mut in_stream);
+                    warn!(
+                        "Unknown property {} detected in line {}!",
+                        property, line_nr
+                    );
                 }
             }
+
+            expect_literal(&mut in_stream, "~~", line_nr)?; // found at the end of each line
+
+            // println!("{}", value.as_str());
+            println!("{:?}", in_stream.peek());
         }
 
         return Err(String::from("Not implemented"));

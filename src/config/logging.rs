@@ -18,7 +18,7 @@ use log4rs::{
 const MAX_LOG_SIZE: u64 = 10 * 1024; // 10KB
 const MAX_LOG_COUNT: u32 = 10;
 #[cfg(not(debug_assertions))]
-const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Warn;
+const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Info;
 #[cfg(debug_assertions)]
 const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
