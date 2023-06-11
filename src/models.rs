@@ -1,5 +1,6 @@
 pub mod emergency;
 
+pub mod either;
 pub mod radio_identifier;
 pub mod recoverable;
 
