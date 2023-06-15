@@ -18,9 +18,10 @@ pub fn connect(config: &Config) -> Result<Session<TlsStream<TcpStream>>, String>
         .login(smtp_cfg.username, smtp_cfg.password)
         .map_err(|e| format!("couldn't login to imap server: {}", e.0))?;
 
-    session
+    let inbox = session
         .select(MAILBOX_INBOX)
         .map_err(|e| format!("couldn't select mailbox {}: {}", MAILBOX_INBOX, e))?;
+    println!("{} messages in INBOX", inbox.exists);
 
     return Ok(session);
 }

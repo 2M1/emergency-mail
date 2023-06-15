@@ -209,6 +209,7 @@ dependencies = [
  "log",
  "log4rs",
  "native-tls",
+ "no-panic",
  "serde",
  "serde_yaml 0.9.21",
 ]
@@ -610,6 +611,17 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "no-panic"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a10f40e1ad2a8330c9a69e6fcbc2ddd9727a4548510811b2fa4d29b845bc156"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.16",
 ]
 
 [[package]]

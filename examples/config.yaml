@@ -1,5 +1,5 @@
 imap:
-  host: "imap.gmail.com" # leave empty to use the environment variable EM_SMTP_HOST
+  host: "" # leave empty to use the environment variable EM_SMTP_HOST
   port: 993
   username: "" # leave empty to use the environment variable EM_SMTP_USERNAME
   password: "" # leave empty to use the environment variable EM_SMTP_PASSWORD

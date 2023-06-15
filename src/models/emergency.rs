@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use log::{info, warn};
+use no_panic::no_panic;
 use std::{
     iter::Peekable,
     str::{Chars, FromStr},
@@ -97,6 +98,7 @@ macro_rules! simple_property {
 impl FromStr for Emergency {
     type Err = String;
 
+    #[no_panic]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut ems = Emergency::default();
         let mut line_nr = 0;
