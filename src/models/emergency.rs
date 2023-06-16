@@ -6,7 +6,7 @@ use std::{
     str::{Chars, FromStr},
 };
 
-use super::{either::Either, radio_identifier::RadioIdentifier};
+use super::{either::Either, radio_identifier::RadioIdentifier, unit_alarm_time::UnitAlarmTime};
 
 #[derive(Debug, Default)]
 pub struct Emergency {
@@ -26,7 +26,7 @@ pub struct Emergency {
     pub note: Option<String>,
     pub patient_name: Option<String>,
     pub dispatched_units: Vec<Either<RadioIdentifier, String>>,
-    pub unit_alarm_times: Vec<String>,
+    pub unit_alarm_times: Vec<UnitAlarmTime>,
     pub alarm_time: NaiveDateTime,
 }
 
@@ -58,6 +58,16 @@ fn read_value(chars: &mut Peekable<Chars>) -> String {
     return value;
 }
 
+fn skip_line(chars: &mut Peekable<Chars>, line_nr: &mut u64) -> () {
+    while let Some(next) = chars.peek() {
+        if next == &'\n' {
+            *line_nr += 1;
+            break;
+        }
+        let _ = chars.next();
+    }
+}
+
 fn expect_literal(chars: &mut Peekable<Chars>, literal: &str, line_nr: u64) -> Result<(), String> {
     for c in literal.chars() {
         let Some(current_char) = chars.next() else {
@@ -87,6 +97,18 @@ impl Emergency {
             && !self.unit_alarm_times.is_empty()
             && self.emergency_number != 0;
     }
+
+    fn count_units_from_town(&self, town: u8) -> u64 {
+        let mut n = 0;
+        for u in self.dispatched_units.iter() {
+            if let Either::Left(id) = u {
+                if id.agency == town {
+                    n += 1;
+                }
+            }
+        }
+        return n;
+    }
 }
 
 macro_rules! simple_property {
@@ -95,10 +117,23 @@ macro_rules! simple_property {
     };
 }
 
+macro_rules! check_error_skip_line {
+    ($f: expr, $s: ident, $l: ident) => {
+        match $f {
+            Err(e) => {
+                warn!("{}", e);
+                skip_line(&mut $s, &mut $l);
+                continue;
+            }
+            _ => {}
+        }
+    };
+}
+
 impl FromStr for Emergency {
     type Err = String;
 
-    #[no_panic]
+    // #[no_panic]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut ems = Emergency::default();
         let mut line_nr = 0;
@@ -110,12 +145,20 @@ impl FromStr for Emergency {
                 println!("eoi");
                 break;
             }
-            expect_literal(&mut in_stream, "~~", line_nr)?;
+            check_error_skip_line!(
+                expect_literal(&mut in_stream, "~~", line_nr),
+                in_stream,
+                line_nr
+            );
 
             let property = read_value(&mut in_stream);
 
             println!("property: {}", property.as_str());
-            expect_literal(&mut in_stream, "~~", line_nr)?;
+            check_error_skip_line!(
+                expect_literal(&mut in_stream, "~~", line_nr),
+                in_stream,
+                line_nr
+            );
 
             match property.as_str() {
                 "Ort" => {
@@ -190,7 +233,6 @@ impl FromStr for Emergency {
                 }
                 "EMListe" => {
                     let em_string = read_value(&mut in_stream);
-                    println!("em_string: {}", em_string);
                     em_string.split(", ").for_each(|em| {
                         let identifier = RadioIdentifier::from_str(em);
                         if let Ok(identifier) = identifier {
@@ -205,24 +247,44 @@ impl FromStr for Emergency {
                     });
                 }
 
-                "Status" => expect_literal(
-                    &mut in_stream,
-                    "Fahrzeug~~Zuget~~Alarm~~Ausgerückt", // TODO: make dynamic, implement encoding correctly
-                    line_nr,
-                )?,
+                "Status" => check_error_skip_line!(
+                    expect_literal(
+                        &mut in_stream,
+                        "Fahrzeug~~Zuget~~Alarm~~Ausgerückt", // TODO: make dynamic, implement encoding correctly
+                        line_nr,
+                    ),
+                    in_stream,
+                    line_nr
+                ),
                 "ALARM" => {
                     let _status = read_value(&mut in_stream);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
-                    let _unit = read_value(&mut in_stream);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
-                    let _id = read_value(&mut in_stream);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
+                    let unit = read_value(&mut in_stream);
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
+                    let id = read_value(&mut in_stream);
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
                     let alarm_time = read_value(&mut in_stream);
-                    ems.unit_alarm_times.push(alarm_time);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
                     let _responding = read_value(&mut in_stream);
-                    // TODO: check if the units field should be created from this list, with more info (such as alarm time and department)
-                    // would require duplicate checking, since some units may appear multiple times
+                    let unit_alarm_time = UnitAlarmTime::from_values(id, unit, alarm_time);
+                    println!("unit_alarm_time: {:?}", unit_alarm_time);
+                    ems.unit_alarm_times.push(unit_alarm_time);
                 }
 
                 "WGS84_X" => {
@@ -233,12 +295,20 @@ impl FromStr for Emergency {
                 }
                 "Koord_EPSG_25833" => {
                     let _ = read_value(&mut in_stream);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
                     let _ = read_value(&mut in_stream);
                 }
                 "Koord_EPSG_4326" => {
                     let _ = read_value(&mut in_stream);
-                    expect_literal(&mut in_stream, "~~", line_nr)?;
+                    check_error_skip_line!(
+                        expect_literal(&mut in_stream, "~~", line_nr),
+                        in_stream,
+                        line_nr
+                    );
                     let _ = read_value(&mut in_stream);
                 }
                 "Einsatzortzusatz" => {
@@ -257,7 +327,7 @@ impl FromStr for Emergency {
                 }
 
                 _ => {
-                    let _ = read_value(&mut in_stream);
+                    skip_line(&mut in_stream, &mut line_nr);
                     // skip value. If this is not a simple key value pair, we might be screwed...
                     // TODO: perhaps expect a new line also (since all but one property are followed by a new line)
                     warn!(
@@ -267,10 +337,11 @@ impl FromStr for Emergency {
                 }
             }
 
-            expect_literal(&mut in_stream, "~~", line_nr)?; // found at the end of each line
-
-            // println!("{}", value.as_str());
-            println!("{:?}", in_stream.peek());
+            check_error_skip_line!(
+                expect_literal(&mut in_stream, "~~", line_nr),
+                in_stream,
+                line_nr
+            ); // found at the end of each line
         }
 
         return Ok(ems);

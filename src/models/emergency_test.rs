@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 
-use crate::models::{either::Either, emergency::Emergency, radio_identifier::RadioIdentifier};
+use crate::{
+    config::logging,
+    models::{either::Either, emergency::Emergency, radio_identifier::RadioIdentifier},
+};
 
 #[cfg(test)]
 const TEST_MAIL_CONTENT: &str = r#"
@@ -59,6 +62,7 @@ const TEST_MAIL_CONTENT: &str = r#"
 
 #[test]
 fn test_parse_emergency() {
+    logging::init_logging();
     let ems = Emergency::from_str(TEST_MAIL_CONTENT).unwrap();
 
     assert_eq!(ems.town, "Brandenburg an der Havel".to_string());
@@ -86,9 +90,10 @@ fn test_parse_emergency() {
         ])
         .all(|(a, b)| *a == b));
     assert_eq!(ems.unit_alarm_times.len(), 3);
-    assert_eq!(ems.unit_alarm_times[0], "08:21");
-    assert_eq!(ems.unit_alarm_times[1], "08:21");
-    assert_eq!(ems.unit_alarm_times[2], "08:23");
+    assert_eq!(ems.unit_alarm_times[0].alarm_time, "08:21");
+    assert_eq!(ems.unit_alarm_times[1].alarm_time, "08:21");
+    assert_eq!(ems.unit_alarm_times[2].alarm_time, "08:23");
+    // TODO: add test for alarm time
     assert_eq!(
         ems.alarm_time,
         NaiveDate::from_ymd(2022, 9, 29).and_hms(8, 23, 0)

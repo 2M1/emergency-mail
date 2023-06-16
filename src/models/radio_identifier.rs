@@ -1,12 +1,22 @@
 use std::{fmt::Display, str::FromStr};
 
+use no_panic::no_panic;
+
+use super::either::Either;
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct RadioIdentifier {
     pub org: String,
     pub county: String,
-    pub agency: u32,
+    pub agency: u8,
     pub engine_type: u32,
     pub number: u32,
+}
+
+impl RadioIdentifier {
+    pub fn to_left<B>(self) -> Either<RadioIdentifier, B> {
+        return Either::Left(self);
+    }
 }
 
 impl FromStr for RadioIdentifier {
@@ -15,14 +25,14 @@ impl FromStr for RadioIdentifier {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut in_stream = s.chars();
 
-        let org = in_stream.by_ref().take_while(|c| c != &' ').collect();
-        let county = in_stream.by_ref().take_while(|c| c != &' ').collect();
+        let org: String = in_stream.by_ref().take_while(|c| c != &' ').collect();
+        let county: String = in_stream.by_ref().take_while(|c| c != &' ').collect();
 
         let agency = in_stream
             .by_ref() // use a reference to actually advance the common iterator and not create a copy
             .take_while(|c| c != &'/')
             .collect::<String>()
-            .parse::<u32>()
+            .parse::<u8>()
             .map_err(|e| format!("Failed to parse RadioIdentifier {} at Agency: {}", s, e))?;
 
         let engine_type = in_stream
