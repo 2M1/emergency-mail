@@ -1,9 +1,9 @@
-use chrono::format::format;
+
 use config::logging;
 use config::Config;
 
 use log::info;
-use no_panic::no_panic;
+
 
 use crate::connection::imap::IMAPConnection;
 

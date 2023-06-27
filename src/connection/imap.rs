@@ -1,15 +1,14 @@
 use std::{
-    borrow::BorrowMut, cell::RefCell, cmp::max, net::TcpStream, rc::Rc, sync::Arc, time::Duration,
+    cmp::max, net::TcpStream, time::Duration,
 };
 
 use imap::{
-    extensions::idle::WaitOutcome,
     types::{Fetch, Mailbox, UnsolicitedResponse},
     Session,
 };
 use log::{error, info, warn};
 use native_tls::TlsStream;
-use no_panic::no_panic;
+
 
 use crate::config::Config;
 
@@ -83,7 +82,7 @@ impl IMAPConnection {
             .collect();
     }
 
-    pub fn on_new_mail(&mut self, f: &mut dyn FnMut(Vec<Option<String>>)) -> IMAPIdleError {
+    pub fn on_new_mail(&mut self, _f: &mut dyn FnMut(Vec<Option<String>>)) -> IMAPIdleError {
         let mut idle = self.session.idle();
         idle.timeout(self.idle_interval);
 

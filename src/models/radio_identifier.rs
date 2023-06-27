@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use no_panic::no_panic;
+
 
 use super::either::Either;
 
