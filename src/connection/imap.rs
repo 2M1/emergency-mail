@@ -1,11 +1,15 @@
-use std::{cmp::max, net::TcpStream, sync::Arc, time::Duration};
+use std::{
+    borrow::BorrowMut, cell::RefCell, cmp::max, net::TcpStream, rc::Rc, sync::Arc, time::Duration,
+};
 
 use imap::{
-    types::{Fetch, Mailbox},
+    extensions::idle::WaitOutcome,
+    types::{Fetch, Mailbox, UnsolicitedResponse},
     Session,
 };
-use log::{error, warn};
-use native_tls::{TlsConnector, TlsStream};
+use log::{error, info, warn};
+use native_tls::TlsStream;
+use no_panic::no_panic;
 
 use crate::config::Config;
 
@@ -25,11 +29,9 @@ pub struct IMAPConnection {
 impl IMAPConnection {
     pub fn connect(config: &Config) -> Result<Self, String> {
         let imap_cfg = config.imap.clone();
-        let tls = TlsConnector::builder()
-            .build()
-            .map_err(|e| format!("couldn't create TLS connector: {}", e))?;
-        let client = imap::connect((imap_cfg.host, imap_cfg.port), &config.imap.host, &tls)
-            .map_err(|e| format!("couldn't connect to imap server: {}", e))?;
+        let client = imap::ClientBuilder::new(imap_cfg.host, imap_cfg.port)
+            .native_tls()
+            .map_err(|e| format!("couldn't create imap client: {}", e))?;
         let mut session = client
             .login(imap_cfg.username, imap_cfg.password)
             .map_err(|e| format!("couldn't login to imap server: {}", e.0))?;
@@ -82,18 +84,54 @@ impl IMAPConnection {
     }
 
     pub fn on_new_mail(&mut self, f: &mut dyn FnMut(Vec<Option<String>>)) -> IMAPIdleError {
-        let Ok(mut idle) = self.session.idle() else {
-            error!("couldn't start idle");
-            return IMAPIdleError::InitialisationError;
-        };
+        let mut idle = self.session.idle();
+        idle.timeout(self.idle_interval);
 
-        idle.set_keepalive(self.idle_interval);
+        let err = idle.wait_while(|response| {
+            println!("response: {:?}", response);
+
+            match response {
+                UnsolicitedResponse::Exists(exists) | UnsolicitedResponse::Recent(exists) => {
+                    info!("{} new max/new mails", exists);
+                    // let mails = this.load_newest();
+                    // f(mails);
+                }
+                _ => {
+                    // TODO: check if a new mail is available
+                }
+            }
+
+            true
+        });
+
+        match err {
+            Ok(_) => return IMAPIdleError::ConnectionError, // idle returned false, due to a timeout
+            Err(e) => {
+                error!("idle error: {}", e);
+                return IMAPIdleError::InitialisationError;
+            }
+        }
+    }
+
+    pub fn reconnecting_on_new_mail(&mut self, f: &mut dyn FnMut(Vec<Option<String>>)) -> ! {
+        let mut init_err_count = 0;
         loop {
-            let Ok(_) = idle.wait_keepalive() else {
-                error!("idle connection lost!");
-                return IMAPIdleError::ConnectionError;
-            };
-            // f(self.load_newest());
+            match self.on_new_mail(f) {
+                IMAPIdleError::InitialisationError => {
+                    init_err_count += 1;
+                    if init_err_count > 5 {
+                        error!("too many initialisation errors");
+                        // TODO: decide on strategy
+                        // currently: reconnect immediately
+                    }
+                    info!("reconnecting");
+                }
+
+                IMAPIdleError::ConnectionError => {
+                    info!("reconnecting");
+                    init_err_count = 0;
+                }
+            }
         }
     }
 

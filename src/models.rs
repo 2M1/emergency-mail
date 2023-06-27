@@ -1,4 +1,5 @@
 pub mod emergency;
+pub mod emergency_parsing;
 
 pub mod either;
 pub mod radio_identifier;

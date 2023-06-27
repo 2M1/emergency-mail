@@ -20,26 +20,9 @@ fn main() {
 
     let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
 
-    // let mut idle = connection.idle().unwrap();
-    // idle.set_keepalive(config.interval_as_duration());
-    // idle.wait_keepalive().unwrap();
-
-    // let messages = connection
-    //     .fetch(
-    //         "2:*",
-    //         "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",
-    //     )
-    //     .expect("couldn't fetch message");
-
-    // let message = messages.iter().next().unwrap();
-    // let header = message.header().unwrap();
-    // println!("message {:?}\n\n", message);
-    // println!(
-    //     "{:?}",
-    //     String::from_utf8(header.to_vec()).expect("couldn't convert string")
-    // );
-
-    // connection.logout().expect("couldn't logout");
-    let new = connection.load_newest();
-    println!("{:?}", new);
+    connection.reconnecting_on_new_mail(&mut |mails| {
+        for mail in mails {
+            println!("new mail: {:?}", mail);
+        }
+    });
 }
