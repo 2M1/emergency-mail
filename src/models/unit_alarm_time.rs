@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-
-
 use super::{either::Either, radio_identifier::RadioIdentifier};
 
 #[derive(Debug, Eq, PartialEq)]

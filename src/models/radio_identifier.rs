@@ -1,7 +1,5 @@
 use std::{fmt::Display, str::FromStr};
 
-
-
 use super::either::Either;
 
 #[derive(Debug, Eq, PartialEq)]
