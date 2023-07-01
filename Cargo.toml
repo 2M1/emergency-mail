@@ -15,3 +15,6 @@ log = "0.4.19"
 log4rs = "1.2.0"
 genpdf = "0.2.0"
 no-panic = "0.1"
+
+[dev-dependencies]
+mockall = "0.11.4"

@@ -1,11 +1,17 @@
+use std::borrow::BorrowMut;
+use std::cell::Cell;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::Arc;
 
 use config::logging;
 use config::Config;
 
 use log::info;
 
-
 use crate::connection::imap::IMAPConnection;
+use crate::models::emergency::Emergency;
 
 mod config;
 mod connection;
@@ -20,9 +26,17 @@ fn main() {
 
     let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
 
-    connection.reconnecting_on_new_mail(&mut |mails| {
-        for mail in mails {
+    loop {
+        let new_mails = connection.reconnecting_await_new_mail();
+        for mail in new_mails {
+            if mail.is_none() {
+                println!("mail is none");
+                continue;
+            }
             println!("new mail: {:?}", mail);
+
+            let ems = Emergency::from_str(mail.unwrap().as_str()).unwrap();
+            println!("ems: {:?}", ems);
         }
-    });
+    }
 }

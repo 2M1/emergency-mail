@@ -1,24 +1,27 @@
-use std::{
-    cmp::max, net::TcpStream, time::Duration,
-};
+use std::{cmp::max, net::TcpStream, time::Duration};
 
 use imap::{
-    types::{Fetch, Mailbox, UnsolicitedResponse},
+    types::{Mailbox, UnsolicitedResponse},
     Session,
 };
+
 use log::{error, info, warn};
 use native_tls::TlsStream;
 
-
 use crate::config::Config;
+
+use super::imap_multipart::get_message_body;
+use super::message::Message;
 
 const MAILBOX_INBOX: &str = "INBOX";
 
+/// Possible errors that can occur when using the IMAP IDLE command.
 pub enum IMAPIdleError {
     InitialisationError,
     ConnectionError,
 }
 
+/// Represents a connection to an IMAP server.
 pub struct IMAPConnection {
     session: Session<TlsStream<TcpStream>>,
     inbox: Mailbox,
@@ -26,6 +29,11 @@ pub struct IMAPConnection {
 }
 
 impl IMAPConnection {
+    /// Creates a new IMAPConnection by connecting and authenticating to the server specified in the config.
+    ///
+    /// # description
+    /// Connects to the IMAPServer in config, using native OpenSSL (TLS).
+    /// It then logs in to the server using the username and password specified in the config and selects the INBOX mailbox.
     pub fn connect(config: &Config) -> Result<Self, String> {
         let imap_cfg = config.imap.clone();
         let client = imap::ClientBuilder::new(imap_cfg.host, imap_cfg.port)
@@ -46,94 +54,112 @@ impl IMAPConnection {
         });
     }
 
-    fn message_body(message: &Fetch) -> Option<String> {
-        let Some(body) = message.body() else {
-            error!(
-                "couldn't get body of mail {}",
-                message.uid.unwrap_or_default()
-            );
-            return None;
-        };
-
-        return String::from_utf8(body.to_vec())
-            .map_err(|_| {
-                error!(
-                    "couldn't convert mail {} to string.",
-                    message.uid.unwrap_or_default()
-                );
-            })
-            .ok();
-    }
-
+    /// loads the newest mails in the inbox from the server
+    ///
+    /// # description
+    /// fetches all mails with a uid greater than the current max uid in the inbox.
+    /// the uid value is transmitted when selecting the inbox in the connect method.
+    /// the uid is then updated to the maximum uid of the fetched mails.
+    /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
+    ///
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
-        return self
-            .session
-            .fetch(
-                format!("{}:*", self.inbox.exists),
-                "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",
-            )
-            .expect("couldn't fetch message")
+        let fetch_res = self.session.fetch(
+            format!("{}:*", self.inbox.exists + 1),
+            "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",
+        );
+        if let Err(e) = fetch_res {
+            error!("couldn't fetch new mails: {}", e);
+            return vec![];
+        }
+        let messages = fetch_res.unwrap();
+        return messages
             .iter()
+            .map(Message::from_fetch)
             .map(|m| {
                 self.inbox.exists = max(self.inbox.exists, m.uid.unwrap_or_default() + 1);
                 return m;
             })
-            .map(Self::message_body)
+            .map(get_message_body)
             .collect();
     }
 
-    pub fn on_new_mail(&mut self, _f: &mut dyn FnMut(Vec<Option<String>>)) -> IMAPIdleError {
+    /// waits for new mails to arrive in the inbox using the IMAP IDLE command.
+    ///
+    /// # description
+    /// the IMAP IDLE command is used to wait for new mails to arrive in the inbox.
+    /// the connection is automatically re-established on the RFC specified timeout period (slow poll).
+    /// but not on other errors.
+    pub fn await_new_mail(&mut self) -> Result<u32, IMAPIdleError> {
         let mut idle = self.session.idle();
         idle.timeout(self.idle_interval);
+        let mut new_max = self.inbox.exists;
 
         let err = idle.wait_while(|response| {
             println!("response: {:?}", response);
 
-            match response {
-                UnsolicitedResponse::Exists(exists) | UnsolicitedResponse::Recent(exists) => {
-                    info!("{} new max/new mails", exists);
-                    // let mails = this.load_newest();
-                    // f(mails);
+            return match response {
+                UnsolicitedResponse::Exists(exists) => {
+                    info!("new mails: {} mails in INBOX", exists);
+                    new_max = max(new_max, exists);
+                    false
+                }
+                UnsolicitedResponse::Recent(num) => {
+                    info!("{} recent mails", num);
+                    true
                 }
                 _ => {
                     // TODO: check if a new mail is available
+                    true
                 }
-            }
-
-            true
+            };
         });
 
-        match err {
-            Ok(_) => return IMAPIdleError::ConnectionError, // idle returned false, due to a timeout
+        return match err {
+            Ok(_) => Ok(new_max), // idle returned false, due to a timeout
             Err(e) => {
                 error!("idle error: {}", e);
-                return IMAPIdleError::InitialisationError;
+                Err(IMAPIdleError::InitialisationError)
             }
-        }
+        };
     }
 
-    pub fn reconnecting_on_new_mail(&mut self, f: &mut dyn FnMut(Vec<Option<String>>)) -> ! {
+    /// waits for new mails to arrive in the inbox using the IMAP IDLE command. Reconnects on error.
+    ///
+    /// # description
+    /// similar to await_new_mail, but reconnects on errors.
+    /// The reconnect strategy is currently to reconnect immediately. In the future this might be changed
+    /// to wait for a dynamically calculated time period, based on the number of errors, before retrying.
+    ///
+    pub fn reconnecting_await_new_mail(&mut self) -> Vec<Option<String>> {
         let mut init_err_count = 0;
         loop {
-            match self.on_new_mail(f) {
-                IMAPIdleError::InitialisationError => {
-                    init_err_count += 1;
-                    if init_err_count > 5 {
-                        error!("too many initialisation errors");
-                        // TODO: decide on strategy
-                        // currently: reconnect immediately
+            let result = self.await_new_mail();
+            if let Ok(exists) = result {
+                info!("new mail nr: {}", exists);
+                let newest = self.load_newest();
+                return newest;
+            } else if let Err(e) = result {
+                match e {
+                    IMAPIdleError::InitialisationError => {
+                        init_err_count += 1;
+                        if init_err_count > 5 {
+                            error!("too many initialisation errors");
+                            // TODO: decide on strategy
+                            // currently: reconnect immediately
+                        }
+                        info!("reconnecting");
                     }
-                    info!("reconnecting");
-                }
 
-                IMAPIdleError::ConnectionError => {
-                    info!("reconnecting");
-                    init_err_count = 0;
+                    IMAPIdleError::ConnectionError => {
+                        info!("reconnecting");
+                        init_err_count = 0;
+                    }
                 }
             }
         }
     }
 
+    /// ends the session by logging out
     pub fn end(&mut self) {
         self.session.logout().unwrap_or_else(|e| {
             warn!("couldn't logout: {}", e);

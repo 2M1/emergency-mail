@@ -12,17 +12,21 @@ use log4rs::{
     config::{Appender, Root},
     encode::pattern::PatternEncoder,
     filter::threshold::ThresholdFilter,
-    Config,
+    Config, Handle,
 };
 
+#[cfg(not(debug_assertions))]
+const MAX_LOG_SIZE: u64 = 100 * 1024; // 100KB
+#[cfg(debug_assertions)]
 const MAX_LOG_SIZE: u64 = 10 * 1024; // 10KB
+
 const MAX_LOG_COUNT: u32 = 10;
 #[cfg(not(debug_assertions))]
 const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Info;
 #[cfg(debug_assertions)]
 const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
-pub fn init_logging() {
+pub fn init_logging() -> Handle {
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new(
             "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
@@ -59,5 +63,5 @@ pub fn init_logging() {
         )
         .unwrap();
 
-    log4rs::init_config(config).unwrap();
+    return log4rs::init_config(config).unwrap();
 }
