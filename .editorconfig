@@ -1,0 +1,11 @@
+root = true
+
+# use Unix newlines:
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+[*.{rs,yaml,tex}]
+ident_style = space
+ident_size = 4
