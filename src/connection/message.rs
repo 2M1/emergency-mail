@@ -19,6 +19,8 @@ pub struct Message {
 
 impl Message {
     pub fn from_fetch(fetch: &Fetch) -> Self {
+        // this method can unfortunately not be tested as the Fetch struct is not constructable.
+
         let header = if let Some(header) = fetch.header() {
             Some(header.to_vec())
         } else {

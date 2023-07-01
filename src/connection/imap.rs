@@ -5,7 +5,7 @@ use imap::{
     Session,
 };
 
-use log::{error, info, warn};
+use log::{error, info, trace, warn};
 use native_tls::TlsStream;
 
 use crate::config::Config;
@@ -63,20 +63,25 @@ impl IMAPConnection {
     /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
+        let set = format!("{}:*", self.inbox.exists + 1);
+        trace!("fetching mails with set {}", set);
         let fetch_res = self.session.fetch(
-            format!("{}:*", self.inbox.exists + 1),
+            set,
             "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",
         );
         if let Err(e) = fetch_res {
             error!("couldn't fetch new mails: {}", e);
             return vec![];
         }
+
         let messages = fetch_res.unwrap();
         return messages
             .iter()
             .map(Message::from_fetch)
             .map(|m| {
-                self.inbox.exists = max(self.inbox.exists, m.uid.unwrap_or_default() + 1);
+                trace!("fetched message: {:?}", m.uid);
+                // set the maximum uid currently seen.
+                self.inbox.exists = max(self.inbox.exists, m.uid.unwrap_or_default());
                 return m;
             })
             .map(get_message_body)
@@ -95,7 +100,7 @@ impl IMAPConnection {
         let mut new_max = self.inbox.exists;
 
         let err = idle.wait_while(|response| {
-            println!("response: {:?}", response);
+            trace!("response: {:?}", response);
 
             return match response {
                 UnsolicitedResponse::Exists(exists) => {
@@ -109,6 +114,7 @@ impl IMAPConnection {
                 }
                 _ => {
                     // TODO: check if a new mail is available
+                    trace!("unrecognised unsolicited response: {:?}", response);
                     true
                 }
             };

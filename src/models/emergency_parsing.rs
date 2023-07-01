@@ -106,7 +106,6 @@ impl FromStr for Emergency {
         while in_stream.peek().is_some() {
             skip_whitespace_count_lines(&mut in_stream, &mut line_nr);
             if in_stream.peek().is_none() {
-                println!("eoi");
                 break;
             }
             check_error_skip_line!(
@@ -117,7 +116,6 @@ impl FromStr for Emergency {
 
             let property = read_value(&mut in_stream);
 
-            println!("property: {}", property.as_str());
             check_error_skip_line!(
                 expect_literal(&mut in_stream, "~~", line_nr),
                 in_stream,
@@ -235,7 +233,6 @@ impl FromStr for Emergency {
                     );
                     let _responding = read_value(&mut in_stream);
                     let unit_alarm_time = UnitAlarmTime::from_values(id, unit, alarm_time);
-                    println!("unit_alarm_time: {:?}", unit_alarm_time);
                     ems.unit_alarm_times.push(unit_alarm_time);
                 }
 
