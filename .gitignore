@@ -322,3 +322,6 @@ TSWLatexianTemp*
 .env.test
 .env.debug
 .env.local
+
+# XPS files (testing):
+*.xps

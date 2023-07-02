@@ -237,6 +237,7 @@ dependencies = [
  "no-panic",
  "serde",
  "serde_yaml 0.9.22",
+ "windows",
 ]
 
 [[package]]

@@ -16,5 +16,18 @@ log4rs = "1.2.0"
 genpdf = "0.2.0"
 no-panic = "0.1"
 
+[dependencies.windows]
+version = "0.48"
+features = [
+    "Data_Xml_Dom",
+    "Win32_System_Com",
+    "Win32_Storage_Xps_Printing",
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_Security",
+    "Win32_Storage_Packaging_Opc",
+    "Win32_System_Com_Events",
+]
+
 [dev-dependencies]
 mockall = "0.11.4"
