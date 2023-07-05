@@ -82,7 +82,8 @@ pub fn print_test(doc: XPSSingleDocument) {
     }
 
     for page in doc.pages.iter() {
-        let res = unsafe { package_writer.AddPage(page, &page_size_a4, None, None, None, None) };
+        let res =
+            unsafe { package_writer.AddPage(&page.page, &page_size_a4, None, None, None, None) };
         if let Err(e) = res {
             error!("couldn't add page: {}", e.message());
             return;

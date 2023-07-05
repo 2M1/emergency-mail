@@ -325,3 +325,7 @@ TSWLatexianTemp*
 
 # XPS files (testing):
 *.xps
+
+# PDF files (testing):
+*.pdf
+!doc/*.pdf
