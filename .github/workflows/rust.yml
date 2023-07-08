@@ -51,4 +51,4 @@ jobs:
 
     - name: Build and Test
       shell: cmd
-      run: "cargo build locked && cargo test"
+      run: "ci\build_and_test.bat"
