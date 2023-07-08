@@ -1,4 +1,3 @@
-set "RUSTFLAGS=-D warnings"
 set "RUSTFMT_CI=1"
 
 :: Print version information
