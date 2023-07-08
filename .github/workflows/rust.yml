@@ -51,4 +51,4 @@ jobs:
 
     - name: Build and Test
       shell: cmd
-      run: "ci\build_and_test.bat"
+      run: ci\build_and_test.bat
