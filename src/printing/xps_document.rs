@@ -19,8 +19,8 @@ use windows::{
 use super::xps_page::XPSPage;
 
 pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
-    width: 210.0,
-    height: 297.0,
+    width: 2100.0,
+    height: 2970.0,
 };
 
 pub struct XPSSingleDocument {

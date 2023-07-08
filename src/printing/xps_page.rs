@@ -24,7 +24,7 @@ pub struct XPSPage {
 }
 
 impl XPSPage {
-    pub fn add_text(&mut self, text: String, x: f32, y: f32) {
+    pub fn add_text(&mut self, text: String, x: f32, y: f32, size: f32) {
         let page = &self.page;
 
         let font = XPSHelper::load_font(&self.factory, "Arial").unwrap();
@@ -41,7 +41,7 @@ impl XPSPage {
             return;
         };
 
-        let font_size_res = unsafe { glyphs.SetFontRenderingEmSize(12.0) };
+        let font_size_res = unsafe { glyphs.SetFontRenderingEmSize(size) };
         let Ok(_) = font_size_res else {
             error!("couldn't set font size: {:?}", font_size_res.unwrap_err());
             return;

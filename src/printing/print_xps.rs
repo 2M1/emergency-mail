@@ -13,7 +13,7 @@ use windows::{
     },
 };
 
-use super::xps_document::{page_size_a4, XPSSingleDocument};
+use super::xps_document::{XPSSingleDocument, PAGE_SIZE_A4};
 
 pub fn print_test(doc: XPSSingleDocument) {
     // @pre: COM is initialized.
@@ -83,7 +83,7 @@ pub fn print_test(doc: XPSSingleDocument) {
 
     for page in doc.pages.iter() {
         let res =
-            unsafe { package_writer.AddPage(&page.page, &page_size_a4, None, None, None, None) };
+            unsafe { package_writer.AddPage(&page.page, &PAGE_SIZE_A4, None, None, None, None) };
         if let Err(e) = res {
             error!("couldn't add page: {}", e.message());
             return;
