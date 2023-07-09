@@ -10,8 +10,6 @@ use crate::models::emergency::Emergency;
 use crate::printing::com;
 use crate::printing::print_ems::print_emergency;
 
-
-
 mod config;
 mod connection;
 mod models;

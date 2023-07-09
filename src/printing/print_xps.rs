@@ -6,9 +6,7 @@ use windows::{
             Printing::{IXpsPrintJob, IXpsPrintJobStream, StartXpsPrintJob},
             XPS_INTERLEAVING_ON,
         },
-        System::{
-            Threading::{CreateEventA, WaitForSingleObject, INFINITE},
-        },
+        System::Threading::{CreateEventA, WaitForSingleObject, INFINITE},
     },
 };
 

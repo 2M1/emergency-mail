@@ -6,9 +6,8 @@ use windows::{
     Win32::{
         Foundation::{FALSE, TRUE},
         Storage::Xps::{
-            IXpsOMFontResource, IXpsOMObjectFactory, IXpsOMPage,
-            IXpsOMSolidColorBrush, XPS_POINT, XPS_SEGMENT_TYPE_LINE, XPS_SIZE,
-            XPS_STYLE_SIMULATION_BOLD,
+            IXpsOMFontResource, IXpsOMObjectFactory, IXpsOMPage, IXpsOMSolidColorBrush, XPS_POINT,
+            XPS_SEGMENT_TYPE_LINE, XPS_SIZE, XPS_STYLE_SIMULATION_BOLD,
         },
     },
 };

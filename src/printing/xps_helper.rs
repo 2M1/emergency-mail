@@ -3,9 +3,8 @@ use windows::{
     core::HSTRING,
     Win32::{
         Storage::Xps::{
-            IXpsOMFontResource, IXpsOMObjectFactory,
-            IXpsOMSolidColorBrush, XPS_COLOR, XPS_COLOR_0_1, XPS_COLOR_TYPE_SRGB,
-            XPS_FONT_EMBEDDING_OBFUSCATED,
+            IXpsOMFontResource, IXpsOMObjectFactory, IXpsOMSolidColorBrush, XPS_COLOR,
+            XPS_COLOR_0_1, XPS_COLOR_TYPE_SRGB, XPS_FONT_EMBEDDING_OBFUSCATED,
         },
         System::Com::{CoCreateGuid, StringFromGUID2},
     },
