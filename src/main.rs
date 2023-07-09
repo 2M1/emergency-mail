@@ -9,8 +9,8 @@ use log::trace;
 use crate::models::emergency::Emergency;
 use crate::printing::com;
 use crate::printing::print_ems::print_emergency;
-use crate::printing::xps_document::XPSSingleDocument;
-use crate::printing::xps_page::Point;
+
+
 
 mod config;
 mod connection;

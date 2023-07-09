@@ -1,9 +1,8 @@
-use std::{cmp::max, path::Iter};
+use std::{cmp::max};
 
 use crate::models::{either::Either, emergency::Emergency};
 
 use super::{
-    print_xps::print_test,
     xps_document::XPSSingleDocument,
     xps_page::{DrawingAttributes, Point, XPSPage, LINE_HEIGHT},
 };
@@ -249,7 +248,7 @@ fn create_unit_table(ems: &Emergency, page: &mut XPSPage, start_y: f32) {
     let x_offset = x_offset + CHAR_WIDTH_40 * max_len as f32 + 20.0;
 
     // create column 3 (alarm time):
-    let max_len = add_column(
+    let _max_len = add_column(
         "Alarmzeit",
         ems.unit_alarm_times.iter().map(|u| u.alarm_time.clone()),
         page,

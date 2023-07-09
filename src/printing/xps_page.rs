@@ -6,7 +6,7 @@ use windows::{
     Win32::{
         Foundation::{FALSE, TRUE},
         Storage::Xps::{
-            IXpsOMFontResource, IXpsOMGlyphs, IXpsOMObjectFactory, IXpsOMPage,
+            IXpsOMFontResource, IXpsOMObjectFactory, IXpsOMPage,
             IXpsOMSolidColorBrush, XPS_POINT, XPS_SEGMENT_TYPE_LINE, XPS_SIZE,
             XPS_STYLE_SIMULATION_BOLD,
         },
@@ -105,7 +105,7 @@ impl XPSPage {
         };
         if attributes.text_bold {
             let bold_res = unsafe { glyphs.SetStyleSimulations(XPS_STYLE_SIMULATION_BOLD) };
-            if let Err(e) = bold_res {
+            if let Err(_e) = bold_res {
                 warn!("failed to create bold text, continuing with normal font!");
             }
         }

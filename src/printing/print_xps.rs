@@ -7,7 +7,6 @@ use windows::{
             XPS_INTERLEAVING_ON,
         },
         System::{
-            Com::{CoInitialize, CoInitializeEx, Events, COINIT_MULTITHREADED},
             Threading::{CreateEventA, WaitForSingleObject, INFINITE},
         },
     },
