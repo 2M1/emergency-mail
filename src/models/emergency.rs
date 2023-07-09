@@ -49,4 +49,28 @@ impl Emergency {
         }
         return n;
     }
+
+    pub fn address_text(&self) -> String {
+        let mut s = String::new();
+        if self.object.is_some() {
+            s.push_str(&self.object.as_ref().unwrap());
+            s.push_str("\n");
+        }
+        s.push_str(&self.street);
+        s.push_str(" ");
+        s.push_str(&self.house_number);
+        s.push_str("\n");
+        s.push_str(&self.district);
+
+        // if let Some(o) = &self.object_part {
+        //     s.push_str(" ");
+        //     s.push_str(o);
+        // }
+        // if let Some(o) = &self.object_number {
+        //     s.push_str(" ");
+        //     s.push_str(&o.to_string());
+        // }
+
+        return s;
+    }
 }

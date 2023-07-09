@@ -9,19 +9,16 @@ use windows::{
             Packaging::Opc::IOpcPartUri,
             Xps::{
                 IXpsOMDocument, IXpsOMDocumentSequence, IXpsOMObjectFactory, IXpsOMPackage,
-                XpsOMObjectFactory, XPS_SIZE,
+                XpsOMObjectFactory,
             },
         },
         System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER},
     },
 };
 
-use super::xps_page::XPSPage;
+use crate::printing::xps_page::PAGE_SIZE_A4;
 
-pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
-    width: 2100.0,
-    height: 2970.0,
-};
+use super::xps_page::XPSPage;
 
 pub struct XPSSingleDocument {
     pub(super) factory: Arc<IXpsOMObjectFactory>,
@@ -168,9 +165,10 @@ impl XPSSingleDocument {
             xpsPageRef.SetPage(&page).unwrap();
         };
 
-        let page = XPSPage {
-            page: page,
-            factory: Arc::clone(&self.factory),
+        let page = XPSPage::new(Arc::clone(&self.factory), page);
+        let Ok(page) = page else {
+            error!("couldn't create page instance!");
+            return Err(());
         };
 
         self.pages.push(page);

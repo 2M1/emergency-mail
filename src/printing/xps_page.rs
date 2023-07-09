@@ -1,58 +1,114 @@
 use std::sync::Arc;
 
-use log::error;
+use log::{error, warn};
 use windows::{
-    core::HSTRING,
+    core::{Error, HSTRING},
     Win32::{
         Foundation::{FALSE, TRUE},
         Storage::Xps::{
-            IXpsOMObjectFactory, IXpsOMPage, XPS_POINT, XPS_SEGMENT_TYPE, XPS_SEGMENT_TYPE_LINE,
+            IXpsOMFontResource, IXpsOMGlyphs, IXpsOMObjectFactory, IXpsOMPage,
+            IXpsOMSolidColorBrush, XPS_POINT, XPS_SEGMENT_TYPE_LINE, XPS_SIZE,
+            XPS_STYLE_SIMULATION_BOLD,
         },
     },
 };
 
 use super::xps_helper::XPSHelper;
 
+pub const PAGE_MARGIN_A4_DEFAULT: f32 = 150.0; // 1.5cm
+pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
+    width: 2100.0,  // 21cm
+    height: 2970.0, // 29.7cm
+};
+pub const LINE_HEIGHT: f32 = 50.0;
+
 pub struct Point {
     pub x: f32,
     pub y: f32,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct DrawingAttributes {
+    pub text_bold: bool,
+    pub line_thickness: f32,
+}
+
+impl DrawingAttributes {
+    pub const TEXT_BOLD: Self = Self {
+        text_bold: true,
+        line_thickness: 0.5,
+    };
+
+    pub const DEFAULT: Self = Self {
+        text_bold: false,
+        line_thickness: 0.5,
+    };
+}
+
 pub struct XPSPage {
     pub(super) factory: Arc<IXpsOMObjectFactory>,
     pub(super) page: IXpsOMPage,
+    pub margin: f32,
+    size: XPS_SIZE,
+    font: Arc<IXpsOMFontResource>,
 }
 
 impl XPSPage {
-    pub fn add_text(&mut self, text: String, x: f32, y: f32, size: f32) {
+    pub fn new(factory: Arc<IXpsOMObjectFactory>, page: IXpsOMPage) -> Result<XPSPage, ()> {
+        let size = unsafe { page.GetPageDimensions() };
+        let Ok(size) = size else {
+            error!("couldn't get page dimensions: {:?}", size.unwrap_err());
+            return Err(());
+        };
+
+        return Ok(XPSPage {
+            factory: factory.clone(),
+            page: page,
+            margin: PAGE_MARGIN_A4_DEFAULT,
+            size: size,
+            font: Arc::new(XPSHelper::load_font(
+                Arc::clone(&factory).as_ref(),
+                "Arial",
+            )?),
+        });
+    }
+
+    pub fn should_wrap(&self, y: f32) -> bool {
+        return y >= (self.size.height - self.margin);
+    }
+
+    pub fn add_text(
+        &mut self,
+        text: &str,
+        x: f32,
+        y: f32,
+        size: f32,
+        attributes: DrawingAttributes,
+    ) {
+        debug_assert!(x >= self.margin);
+        debug_assert!(x <= (self.size.width - self.margin));
+        debug_assert!(y >= self.margin);
+        debug_assert!(y <= (self.size.height - self.margin));
+
         let page = &self.page;
 
-        let font = XPSHelper::load_font(&self.factory, "Arial").unwrap();
+        let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0);
+        let Ok(brush) = brush else {
+            error!("couldn't create brush");
+            return;
+        };
 
-        let glyphs = unsafe { self.factory.CreateGlyphs(&font) };
+        let glyphs = self._get_glyph_run(Arc::clone(&self.font).as_ref(), x, y, size, brush);
         let Ok(glyphs) = glyphs else {
-            error!("couldn't create glyphs: {:?}", glyphs.unwrap_err());
+            error!("couldn't create glyphs run: {:?}", glyphs.unwrap_err());
             return;
         };
-
-        let origin_res = unsafe { glyphs.SetOrigin(&XPS_POINT { x: x, y: y }) };
-        let Ok(_) = origin_res else {
-            error!("couldn't set origin: {:?}", origin_res.unwrap_err());
-            return;
-        };
-
-        let font_size_res = unsafe { glyphs.SetFontRenderingEmSize(size) };
-        let Ok(_) = font_size_res else {
-            error!("couldn't set font size: {:?}", font_size_res.unwrap_err());
-            return;
-        };
-
-        let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0).unwrap();
-        let brush_res = unsafe { glyphs.SetFillBrushLocal(&brush) };
-        let Ok(_) = brush_res else {
-            error!("couldn't set brush: {:?}", brush_res.unwrap_err());
-            return;
-        };
+        if attributes.text_bold {
+            let bold_res = unsafe { glyphs.SetStyleSimulations(XPS_STYLE_SIMULATION_BOLD) };
+            if let Err(e) = bold_res {
+                warn!("failed to create bold text, continuing with normal font!");
+            }
+        }
 
         let glyphs_editor = unsafe { glyphs.GetGlyphsEditor() };
         let Ok(glyphs_editor) = glyphs_editor else {
@@ -79,7 +135,24 @@ impl XPSPage {
         };
     }
 
-    pub fn add_outline_polygon(&mut self, points: &[Point]) {
+    fn _get_glyph_run(
+        &self,
+        font: &IXpsOMFontResource,
+        x: f32,
+        y: f32,
+        size: f32,
+        brush: IXpsOMSolidColorBrush,
+    ) -> Result<windows::Win32::Storage::Xps::IXpsOMGlyphs, Error> {
+        let glyphs = unsafe { self.factory.CreateGlyphs(font) }?;
+
+        unsafe { glyphs.SetOrigin(&XPS_POINT { x: x, y: y }) }?;
+        unsafe { glyphs.SetFontRenderingEmSize(size) }?;
+        unsafe { glyphs.SetFillBrushLocal(&brush) }?;
+
+        return Ok(glyphs);
+    }
+
+    pub fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes) {
         assert!(points.len() >= 2);
 
         let start = &points[0];
@@ -99,6 +172,11 @@ impl XPSPage {
         let mut segment_data: Vec<f32> = Vec::with_capacity(points.len() * 2);
 
         for point in points {
+            debug_assert!(point.x >= self.margin);
+            debug_assert!(point.y >= self.margin);
+            debug_assert!(point.x <= (self.size.width - self.margin));
+            debug_assert!(point.y <= (self.size.height - self.margin));
+
             segment_data.push(point.x);
             segment_data.push(point.y);
         }
@@ -154,7 +232,7 @@ impl XPSPage {
             return;
         };
 
-        unsafe { path.SetStrokeThickness(0.5).unwrap() };
+        unsafe { path.SetStrokeThickness(attributes.line_thickness).unwrap() };
         let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0).unwrap();
         let brush_res = unsafe { path.SetStrokeBrushLocal(&brush) };
         let Ok(_) = brush_res else {
@@ -167,5 +245,48 @@ impl XPSPage {
             error!("couldn't add path to page: {:?}", page_add_res.unwrap_err());
             return;
         };
+    }
+
+    /// Adds multiple lines of text seperated by \n to the page.
+    ///
+    /// Returns the lowest y coordinate of the text.
+    pub fn add_multiline_text(
+        &mut self,
+        text: String,
+        x: f32,
+        start_y: f32,
+        attributes: DrawingAttributes,
+    ) -> f32 {
+        debug_assert!(x >= self.margin);
+        debug_assert!(x <= (self.size.width - self.margin));
+        debug_assert!(start_y >= self.margin);
+        debug_assert!(start_y <= (self.size.height - self.margin));
+
+        let lines = text.split("\n");
+
+        let mut curr_y = start_y;
+        for line in lines {
+            self.add_text(line, x, curr_y, 40.0, attributes);
+            curr_y += LINE_HEIGHT;
+        }
+
+        return curr_y;
+    }
+
+    pub fn add_horizontal_divider(&mut self, y: f32) {
+        debug_assert!(y >= self.margin);
+        debug_assert!(y <= (self.size.height - self.margin));
+
+        let points = vec![
+            Point {
+                x: self.margin,
+                y: y,
+            },
+            Point {
+                x: self.size.width - self.margin,
+                y: y,
+            },
+        ];
+        self.add_outline_polygon(&points, DrawingAttributes::DEFAULT);
     }
 }
