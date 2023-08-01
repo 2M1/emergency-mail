@@ -70,12 +70,12 @@ fn main() {
     info!("starting up");
     let config_path = std::env::var("EM_CONFIG").unwrap_or("config.yaml".to_string());
     trace!("config path: {}", config_path);
-    let _config = Config::parse(&config_path).expect("couldn't parse config");
+    let config = Config::parse(&config_path).expect("couldn't parse config");
 
     com::init().unwrap();
 
     let ems = Emergency::from_str(EMERGENCY).unwrap();
-    print_emergency(ems);
+    print_emergency(ems, &config);
     // print_test(doc);
 
     // let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");

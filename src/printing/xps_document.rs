@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use log::error;
 use windows::{
@@ -175,12 +175,12 @@ impl XPSSingleDocument {
         return Ok(self.pages.len() - 1);
     }
 
-    pub fn safe(&self) {
+    pub fn safe(&self, path: &Path) {
         const FILE_ATTRIBUTE_NORMAL: u32 = 0x00000080; // for some reason this isn't defined in the winapi rust wrapper
         unsafe {
             self.package
                 .WriteToFile(
-                    w!("test.xps"),
+                    &HSTRING::from(path.to_str().unwrap()),
                     std::ptr::null(),
                     FILE_ATTRIBUTE_NORMAL,
                     false,

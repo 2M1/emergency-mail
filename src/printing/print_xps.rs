@@ -3,14 +3,17 @@ use windows::{
     w,
     Win32::{
         Storage::Xps::{
-            Printing::{IXpsPrintJob, IXpsPrintJobStream, StartXpsPrintJob},
+            Printing::{
+                IXpsPrintJob, IXpsPrintJobStream, StartXpsPrintJob, XPS_JOB_CANCELLED,
+                XPS_JOB_STATUS,
+            },
             XPS_INTERLEAVING_ON,
         },
         System::Threading::{CreateEventA, WaitForSingleObject, INFINITE},
     },
 };
 
-use crate::printing::xps_page::PAGE_SIZE_A4;
+use crate::{config::Config, printing::xps_page::PAGE_SIZE_A4};
 
 use super::xps_document::XPSSingleDocument;
 
@@ -34,14 +37,14 @@ pub fn print_test(doc: XPSSingleDocument) {
     match unsafe {
         StartXpsPrintJob(
             w!("HPE76479 (HP OfficeJet Pro 8020 series)"),
-            w!("test"),
+            w!("emegency mail print job"),
             None,
             None,
             completionEvent,
             &[0u8],
             &mut job,
             &mut stream,
-            &mut ticket_stream,
+            std::ptr::null_mut(),
         )
     } {
         Ok(_) => {}
@@ -51,12 +54,28 @@ pub fn print_test(doc: XPSSingleDocument) {
         }
     }
 
+    // let res = unsafe { package.WriteToStream(stream.as_ref().unwrap(), false) };
+    // if let Err(e) = res {
+    //     error!("couldn't write package to stream: {}", e.message());
+    //     return;
+    // }
+
+    let part_uri_result = unsafe {
+        doc.factory
+            .CreatePartUri(w!("/FixedDocumentSequence.fdseq"))
+    };
+
+    let Ok(part_uri) = part_uri_result else {
+        error!("couldn't create document part uri: {:?}", part_uri_result.unwrap_err());
+        return;
+    };
+
     let package_writer_res = unsafe {
         doc.factory.CreatePackageWriterOnStream(
             stream.as_ref().unwrap(),
             true,
             XPS_INTERLEAVING_ON,
-            doc.fixed_sequence_part.as_ref().unwrap(),
+            &part_uri,
             None,
             None,
             None,
@@ -72,13 +91,22 @@ pub fn print_test(doc: XPSSingleDocument) {
         return;
     };
 
-    let wirter_res = unsafe {
-        package_writer.StartNewDocument(doc.document_part.as_ref().unwrap(), None, None, None, None)
+    let part_uri_result = unsafe {
+        doc.factory
+            .CreatePartUri(w!("/Documents/1/FixedDocument.fdoc"))
     };
+
+    let Ok(part_uri) = part_uri_result else {
+        error!("couldn't create document part uri: {:?}", part_uri_result.unwrap_err());
+        return;
+    };
+
+    let wirter_res = unsafe { package_writer.StartNewDocument(&part_uri, None, None, None, None) };
     if let Err(e) = wirter_res {
         error!("couldn't start new document: {}", e.message());
         return;
     }
+    info!("started new document");
 
     for page in doc.pages.iter() {
         let res =
@@ -115,5 +143,16 @@ pub fn print_test(doc: XPSSingleDocument) {
         );
         return;
     }
-    info!("print job completed");
+    let mut job_status: XPS_JOB_STATUS = unsafe { std::mem::zeroed() };
+    let job_res = unsafe { job.unwrap().GetJobStatus(&mut job_status) };
+    if let Err(e) = job_res {
+        error!("couldn't get job status: {}", e.message());
+        return;
+    } else {
+        info!("job status: {:?}", job_status);
+        info!("job status msg: {:?}", job_status.jobStatus);
+        if job_status.completion != XPS_JOB_CANCELLED {
+            error!("print job failed");
+        }
+    }
 }

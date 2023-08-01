@@ -1,8 +1,15 @@
-use std::cmp::max;
+use std::{cmp::max, fs, path::Path, process::Command};
 
-use crate::models::{either::Either, emergency::Emergency};
+use log::{error, info, trace};
+
+use crate::{
+    config::Config,
+    models::{either::Either, emergency::Emergency},
+    printing::com,
+};
 
 use super::{
+    print_xps::print_test,
     xps_document::XPSSingleDocument,
     xps_page::{DrawingAttributes, Point, XPSPage, LINE_HEIGHT},
 };
@@ -11,10 +18,43 @@ const LABEL_OFFSET: f32 = 180.0;
 const SECTION_OFFSET: f32 = 150.0;
 const CHAR_WIDTH_40: f32 = 25.0;
 
-pub fn print_emergency(ems: Emergency) {
+pub fn print_emergency(ems: Emergency, config: &Config) {
     let doc = create_emergency_xps(&ems);
-    // print_test(doc);
-    doc.safe();
+    let mut temp_dir = std::env::temp_dir();
+    temp_dir.push(Path::new("emergency_mail\\"));
+
+    let res = fs::create_dir_all(&temp_dir);
+    if let Err(e) = res {
+        error!("couldn't create temp dir: {}", e);
+        return;
+    }
+    temp_dir.push("output.xps");
+    trace!("saving to: {:?}", temp_dir);
+    doc.safe(&temp_dir);
+
+    let mut binding = Command::new(&config.printing.sumatra_path);
+    if let Some(printer) = &config.printing.printer {
+        binding.arg("-print-to").arg(printer);
+    } else {
+        binding.arg("-print-to-default");
+    };
+
+    let command = binding.arg(temp_dir.to_str().expect("couldn't convert path to string"));
+    trace!("command: {:?}", command);
+
+    let res = command.output();
+    if let Err(e) = res {
+        error!("couldn't print xps: {}", e);
+    } else if let Ok(output) = res {
+        info!("printing xps returned: {}", output.status);
+        if !output.status.success() {
+            error!(
+                "couldn't print xps: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
+    print_test(doc);
 }
 
 fn add_emergency_header_section(ems: &Emergency, page: &mut XPSPage) {

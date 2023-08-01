@@ -6,5 +6,6 @@ imap:
 interval: 25 # in minutes
 printing:
   min_copies: 2 # number of duplicate copies to be printed
-  printer: null # "HP_LaserJet_400_M401dn" # printer name // TODO: add instructions on how to get the printer name
+  printer: "HPE76479 (HP OfficeJet Pro 8020 series)" # "HP_LaserJet_400_M401dn" # printer name // Get names in PS: "Get-Printer | Format-Table -Autosize"
   amt: 1 # AMT number (Funkkenner, ohne führende 0)
+  sumatra_path: "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe" # path to SumatraPDF

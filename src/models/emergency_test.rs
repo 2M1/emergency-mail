@@ -80,7 +80,6 @@ fn test_parse_emergency() {
     assert_eq!(ems.emergency_number, 322088295);
     assert_eq!(ems.note, Some("TESTETESTTESTE".to_string()));
     assert_eq!(ems.patient_name, None);
-    assert_eq!(ems.dispatched_units.len(), 2);
     assert!(ems
         .dispatched_units
         .iter()

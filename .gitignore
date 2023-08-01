@@ -329,3 +329,11 @@ TSWLatexianTemp*
 # PDF files (testing):
 *.pdf
 !doc/*.pdf
+
+## Python:
+.venv/
+env/
+venv/
+ENV/
+*.pyc
+

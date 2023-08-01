@@ -42,7 +42,6 @@ impl XPSHelper {
         );
         trace!("uri_str: {:?}", uri_str);
         let uri_str = HSTRING::from(uri_str);
-        println!("guid: {:?}", guid_string);
 
         let part_uri = unsafe { factory.CreatePartUri(&uri_str) };
         let Ok(part_uri) = part_uri else {
