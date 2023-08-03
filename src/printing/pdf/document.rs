@@ -1,8 +1,8 @@
-use std::{cell::RefCell, error::Error, fs::File, io::BufWriter, path::Path, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
-use printpdf::{Mm, PdfDocument, PdfDocumentReference, PdfPage};
+use printpdf::{Mm, PdfDocument, PdfDocumentReference};
 
-use crate::printing::document::{self, DocumentBuilder, DocumentBuildingError, Saveable};
+use crate::printing::document::{self, DocumentBuilder};
 
 use super::page::PDFPage;
 

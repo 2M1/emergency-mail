@@ -6,7 +6,7 @@ use std::{
 
 use crate::config::Config;
 
-use super::xps::document;
+
 
 #[derive(Debug, Clone, Copy)]
 pub struct Point {

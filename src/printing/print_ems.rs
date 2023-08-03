@@ -1,6 +1,6 @@
-use std::{cmp::max, fs, io::BufWriter, path::Path, process::Command, rc::Rc};
+use std::{cmp::max, fs, io::BufWriter, path::Path, rc::Rc};
 
-use log::{error, info, trace};
+use log::{error, trace};
 
 use crate::{
     config::Config,
@@ -8,15 +8,13 @@ use crate::{
     printing::{
         document::{DocumentBuildingError, Saveable},
         pdf::document::PDFDocument,
-        xps::print,
     },
 };
 
 use super::{
     document::{DocumentBuilder, DrawingAttributes, PageBuilder, Point},
     xps::{
-        document::XPSSingleDocument,
-        page::{XPSPage, LINE_HEIGHT},
+        page::{LINE_HEIGHT},
     },
 };
 
@@ -24,7 +22,7 @@ const LABEL_OFFSET: f32 = 18.0;
 const SECTION_OFFSET: f32 = 15.0;
 const CHAR_WIDTH_40: f32 = 2.5;
 
-pub fn print_emergency(ems: Emergency, config: &Config) {
+pub fn print_emergency(ems: Emergency, _config: &Config) {
     let mut doc = PDFDocument::new();
     create_emergency_xps(&ems, &mut doc);
     let mut temp_dir = std::env::temp_dir();

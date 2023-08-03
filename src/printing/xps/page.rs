@@ -78,7 +78,7 @@ impl PageBuilder for XPSPage {
         return (self.size.width, self.size.height);
     }
 
-    fn max_lines_before_overflow(&self, y: f32, font_size: f32, attrs: DrawingAttributes) -> usize {
+    fn max_lines_before_overflow(&self, y: f32, _font_size: f32, _attrs: DrawingAttributes) -> usize {
         let mut curr_y = y;
         let mut lines = 0;
         while !self.should_wrap(curr_y) {
@@ -92,8 +92,8 @@ impl PageBuilder for XPSPage {
         &self,
         line_count: usize,
         y: f32,
-        font_size: f32,
-        attrs: DrawingAttributes,
+        _font_size: f32,
+        _attrs: DrawingAttributes,
     ) -> bool {
         let mut curr_y = y;
         for _ in 0..line_count {

@@ -32,7 +32,7 @@ pub fn print_test(doc: XPSSingleDocument) {
 
     let mut job: Option<IXpsPrintJob> = None;
     let mut stream: Option<IXpsPrintJobStream> = None;
-    let mut ticket_stream: Option<IXpsPrintJobStream> = None;
+    let _ticket_stream: Option<IXpsPrintJobStream> = None;
     // start print job.
     match unsafe {
         StartXpsPrintJob(

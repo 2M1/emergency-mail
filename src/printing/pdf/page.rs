@@ -1,8 +1,7 @@
-use std::{borrow::BorrowMut, cell::RefCell, rc::Weak, sync::Arc};
+use std::{cell::RefCell, rc::Weak};
 
 use printpdf::{
-    Color, DirectFontRef, Line, Mm, PdfDocumentReference, PdfLayer, PdfLayerIndex,
-    PdfLayerReference, PdfPage, PdfPageIndex, PdfPageReference, Rgb,
+    Color, DirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
 };
 
 use crate::printing::document::{DrawingAttributes, PageBuilder, Point};
@@ -101,26 +100,26 @@ impl PageBuilder for PDFPage {
 
     fn add_text(
         &mut self,
-        text: &str,
-        x: f32,
-        y: f32,
-        font_size: f32,
-        attributes: DrawingAttributes,
+        _text: &str,
+        _x: f32,
+        _y: f32,
+        _font_size: f32,
+        _attributes: DrawingAttributes,
     ) {
         // TODO: implement
     }
 
-    fn max_lines_before_overflow(&self, y: f32, font_size: f32, attrs: DrawingAttributes) -> usize {
+    fn max_lines_before_overflow(&self, _y: f32, _font_size: f32, _attrs: DrawingAttributes) -> usize {
         // TODO: implement
         return 0;
     }
 
     fn add_multiline_text(
         &mut self,
-        text: String,
-        x: f32,
-        y: f32,
-        attributes: DrawingAttributes,
+        _text: String,
+        _x: f32,
+        _y: f32,
+        _attributes: DrawingAttributes,
     ) -> f32 {
         // TODO: implement
         return 0.0;
@@ -128,10 +127,10 @@ impl PageBuilder for PDFPage {
 
     fn will_multiline_overflow(
         &self,
-        line_count: usize,
-        y: f32,
-        font_size: f32,
-        attrs: DrawingAttributes,
+        _line_count: usize,
+        _y: f32,
+        _font_size: f32,
+        _attrs: DrawingAttributes,
     ) -> bool {
         // TODO: implement
         return true;

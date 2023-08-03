@@ -1,7 +1,7 @@
 use std::{path::Path, sync::Arc};
 
 use log::error;
-use serde::de::Error;
+
 use windows::{
     core::HSTRING,
     w,
@@ -18,7 +18,7 @@ use windows::{
 };
 
 use crate::printing::{
-    document::{Document, DocumentBuilder, DocumentBuildingError, PageBuilder, Saveable},
+    document::{DocumentBuilder, DocumentBuildingError, PageBuilder, Saveable},
     xps::page::PAGE_SIZE_A4,
 };
 
