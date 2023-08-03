@@ -22,6 +22,7 @@ pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
     height: 2970.0, // 29.7cm
 };
 pub const LINE_HEIGHT: f32 = 50.0;
+const COORDINATE_MUKTIPLIER: f32 = 10.0; // because xps is not in mm, but 1/10 mm...
 
 pub struct XPSPage {
     pub(super) factory: Arc<IXpsOMObjectFactory>,
@@ -63,6 +64,9 @@ impl XPSPage {
         size: f32,
         brush: IXpsOMSolidColorBrush,
     ) -> Result<windows::Win32::Storage::Xps::IXpsOMGlyphs, Error> {
+        let x = x * COORDINATE_MUKTIPLIER;
+        let y = y * COORDINATE_MUKTIPLIER;
+
         let glyphs = unsafe { self.factory.CreateGlyphs(font) }?;
 
         unsafe { glyphs.SetOrigin(&XPS_POINT { x: x, y: y }) }?;
@@ -75,10 +79,17 @@ impl XPSPage {
 
 impl PageBuilder for XPSPage {
     fn get_dimnensions(&self) -> (f32, f32) {
-        return (self.size.width, self.size.height);
+        return (self.size.width / 10.0, self.size.height / 10.0);
     }
 
-    fn max_lines_before_overflow(&self, y: f32, _font_size: f32, _attrs: DrawingAttributes) -> usize {
+    fn max_lines_before_overflow(
+        &self,
+        y: f32,
+        _font_size: f32,
+        _attrs: DrawingAttributes,
+    ) -> usize {
+        let y = y * COORDINATE_MUKTIPLIER;
+
         let mut curr_y = y;
         let mut lines = 0;
         while !self.should_wrap(curr_y) {
@@ -95,6 +106,8 @@ impl PageBuilder for XPSPage {
         _font_size: f32,
         _attrs: DrawingAttributes,
     ) -> bool {
+        let y = y * COORDINATE_MUKTIPLIER;
+
         let mut curr_y = y;
         for _ in 0..line_count {
             curr_y += LINE_HEIGHT;
@@ -103,6 +116,9 @@ impl PageBuilder for XPSPage {
     }
 
     fn add_text(&mut self, text: &str, x: f32, y: f32, size: f32, attributes: DrawingAttributes) {
+        let x = x * COORDINATE_MUKTIPLIER;
+        let y = y * COORDINATE_MUKTIPLIER;
+
         debug_assert!(x >= self.margin);
         debug_assert!(x <= (self.size.width - self.margin));
         debug_assert!(y >= self.margin);
@@ -159,8 +175,8 @@ impl PageBuilder for XPSPage {
         let start = &points[0];
         let figure = unsafe {
             self.factory.CreateGeometryFigure(&XPS_POINT {
-                x: start.x,
-                y: start.y,
+                x: start.x * COORDINATE_MUKTIPLIER,
+                y: start.y * COORDINATE_MUKTIPLIER,
             })
         };
 
@@ -173,6 +189,10 @@ impl PageBuilder for XPSPage {
         let mut segment_data: Vec<f32> = Vec::with_capacity(points.len() * 2);
 
         for point in points {
+            let point = XPS_POINT {
+                x: point.x * COORDINATE_MUKTIPLIER,
+                y: point.y * COORDINATE_MUKTIPLIER,
+            };
             debug_assert!(point.x >= self.margin);
             debug_assert!(point.y >= self.margin);
             debug_assert!(point.x <= (self.size.width - self.margin));
@@ -258,6 +278,9 @@ impl PageBuilder for XPSPage {
         start_y: f32,
         attributes: DrawingAttributes,
     ) -> f32 {
+        let x = x * COORDINATE_MUKTIPLIER;
+        let start_y = start_y * COORDINATE_MUKTIPLIER;
+
         debug_assert!(x >= self.margin);
         debug_assert!(x <= (self.size.width - self.margin));
         debug_assert!(start_y >= self.margin);
@@ -267,7 +290,7 @@ impl PageBuilder for XPSPage {
 
         let mut curr_y = start_y;
         for line in lines {
-            self.add_text(line, x, curr_y, 40.0, attributes);
+            self.add_text(line, x / 10.0, curr_y / 10.0, 40.0, attributes);
             curr_y += LINE_HEIGHT;
         }
 
@@ -275,6 +298,8 @@ impl PageBuilder for XPSPage {
     }
 
     fn add_horizontal_divider(&mut self, y: f32) {
+        let y = y * COORDINATE_MUKTIPLIER;
+
         debug_assert!(y >= self.margin);
         debug_assert!(y <= (self.size.height - self.margin));
 

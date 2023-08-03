@@ -13,14 +13,13 @@ use crate::{
 
 use super::{
     document::{DocumentBuilder, DrawingAttributes, PageBuilder, Point},
-    xps::{
-        page::{LINE_HEIGHT},
-    },
+    pdf::page::LINE_HEIGHT,
 };
 
 const LABEL_OFFSET: f32 = 18.0;
 const SECTION_OFFSET: f32 = 15.0;
 const CHAR_WIDTH_40: f32 = 2.5;
+const DEFAULT_FONT_SIZE: f32 = 12.0;
 
 pub fn print_emergency(ems: Emergency, _config: &Config) {
     let mut doc = PDFDocument::new();
@@ -122,10 +121,16 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         "Einsatznummer:",
         19.0,
         34.0,
-        40.0,
+        DEFAULT_FONT_SIZE,
         DrawingAttributes::DEFAULT,
     );
-    page.add_text("Alarmzeit:", 81.0, 34.0, 40.0, DrawingAttributes::DEFAULT);
+    page.add_text(
+        "Alarmzeit:",
+        81.0,
+        34.0,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::DEFAULT,
+    );
 
     // add values:
 
@@ -133,7 +138,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         ems.emergency_number.to_string().as_str(),
         54.0,
         34.0,
-        40.0,
+        DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
 
@@ -198,7 +203,13 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
-            page.add_text("Hinweise", 15.0, curr_y, 40.0, DrawingAttributes::TEXT_BOLD);
+            page.add_text(
+                "Hinweise",
+                15.0,
+                curr_y,
+                DEFAULT_FONT_SIZE,
+                DrawingAttributes::TEXT_BOLD,
+            );
         }
         curr_y += LINE_HEIGHT * 1.5;
         curr_y = page.add_multiline_text(note, LABEL_OFFSET, curr_y, DrawingAttributes::TEXT_BOLD);
@@ -222,7 +233,13 @@ fn add_optional_property(
         return y;
     }
     let mut y = y;
-    page.add_text(label, LABEL_OFFSET, y, 40.0, DrawingAttributes::DEFAULT);
+    page.add_text(
+        label,
+        LABEL_OFFSET,
+        y,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::DEFAULT,
+    );
     y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
 
     return y + LINE_HEIGHT;
@@ -255,7 +272,7 @@ fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) 
         "Alarmierungen",
         15.0,
         start_y,
-        40.0,
+        DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
     start_y += LINE_HEIGHT * 1.5;
@@ -297,12 +314,18 @@ fn add_column<'a, I>(label: &str, values: I, page: &mut dyn PageBuilder, x: f32,
 where
     I: Iterator<Item = String>,
 {
-    page.add_text(label, x, y, 40.0, DrawingAttributes::TEXT_BOLD);
+    page.add_text(label, x, y, DEFAULT_FONT_SIZE, DrawingAttributes::TEXT_BOLD);
     let mut y = y + LINE_HEIGHT;
     let mut max_len = 0;
 
     for value in values {
-        page.add_text(&value.as_str(), x, y, 40.0, DrawingAttributes::DEFAULT);
+        page.add_text(
+            &value.as_str(),
+            x,
+            y,
+            DEFAULT_FONT_SIZE,
+            DrawingAttributes::DEFAULT,
+        );
         max_len = max(max_len, value.len());
         y += LINE_HEIGHT;
     }

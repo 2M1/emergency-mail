@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Weak};
+use std::{cell::RefCell, fs::File, rc::Weak};
 
 use printpdf::{
     Color, DirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
@@ -12,10 +12,10 @@ pub struct PDFPage {
     pub(super) document: Weak<RefCell<PdfDocumentReference>>,
     pub(super) layer: PdfLayerIndex,
     dimensions: (f64, f64),
-    font: Option<DirectFontRef>,
 }
 
-const MARGIN_HORIZONTAL: f64 = 15.0;
+pub const MARGIN_HORIZONTAL: f64 = 15.0;
+pub const LINE_HEIGHT: f32 = 13.0;
 
 impl PDFPage {
     pub fn new(
@@ -29,7 +29,6 @@ impl PDFPage {
             document: doc,
             layer: layer1,
             dimensions: dimens,
-            font: None,
         };
 
         let layer = page
@@ -100,16 +99,39 @@ impl PageBuilder for PDFPage {
 
     fn add_text(
         &mut self,
-        _text: &str,
-        _x: f32,
-        _y: f32,
-        _font_size: f32,
-        _attributes: DrawingAttributes,
+        text: &str,
+        x: f32,
+        y: f32,
+        font_size: f32,
+        attributes: DrawingAttributes,
     ) {
-        // TODO: implement
+        let doc = self.document.upgrade().unwrap();
+        let doc = doc.borrow();
+        let font_path = if attributes.text_bold {
+            "C:\\Windows\\Fonts\\ARIALNB.ttf"
+        } else {
+            "C:\\Windows\\Fonts\\ARIAL.ttf"
+        };
+        let font = doc
+            .add_external_font(File::open(font_path).unwrap())
+            .unwrap();
+        let layer = doc.get_page(self.nr).get_layer(self.layer);
+
+        layer.use_text(
+            text,
+            font_size as f64,
+            Mm(x as f64),
+            Mm(self.dimensions.1 - y as f64),
+            &font,
+        );
     }
 
-    fn max_lines_before_overflow(&self, _y: f32, _font_size: f32, _attrs: DrawingAttributes) -> usize {
+    fn max_lines_before_overflow(
+        &self,
+        _y: f32,
+        _font_size: f32,
+        _attrs: DrawingAttributes,
+    ) -> usize {
         // TODO: implement
         return 0;
     }
@@ -118,11 +140,11 @@ impl PageBuilder for PDFPage {
         &mut self,
         _text: String,
         _x: f32,
-        _y: f32,
+        y: f32,
         _attributes: DrawingAttributes,
     ) -> f32 {
         // TODO: implement
-        return 0.0;
+        return y;
     }
 
     fn will_multiline_overflow(

@@ -9,6 +9,7 @@ Work in progress.
 - [ ] generate pdf
 - [ ] print with sumatraPDF or Adobe (both cli)
 - [ ] notify user/admin on error (add text to printout or popup warning or email)
+- [ ] print times the number of alarmed engines from the amt
 
 ## possible futures:
 - [ ] add gui for status and reprint of last n Ems
