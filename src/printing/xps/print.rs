@@ -13,9 +13,9 @@ use windows::{
     },
 };
 
-use crate::{config::Config, printing::xps_page::PAGE_SIZE_A4};
+use crate::printing::xps::page::PAGE_SIZE_A4;
 
-use super::xps_document::XPSSingleDocument;
+use super::document::XPSSingleDocument;
 
 pub fn print_test(doc: XPSSingleDocument) {
     // @pre: COM is initialized.

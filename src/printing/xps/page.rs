@@ -12,7 +12,9 @@ use windows::{
     },
 };
 
-use super::xps_helper::XPSHelper;
+use crate::printing::document::{DrawingAttributes, PageBuilder, Point};
+
+use super::helper::XPSHelper;
 
 pub const PAGE_MARGIN_A4_DEFAULT: f32 = 150.0; // 1.5cm
 pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
@@ -20,29 +22,6 @@ pub const PAGE_SIZE_A4: XPS_SIZE = XPS_SIZE {
     height: 2970.0, // 29.7cm
 };
 pub const LINE_HEIGHT: f32 = 50.0;
-
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct DrawingAttributes {
-    pub text_bold: bool,
-    pub line_thickness: f32,
-}
-
-impl DrawingAttributes {
-    pub const TEXT_BOLD: Self = Self {
-        text_bold: true,
-        line_thickness: 0.5,
-    };
-
-    pub const DEFAULT: Self = Self {
-        text_bold: false,
-        line_thickness: 0.5,
-    };
-}
 
 pub struct XPSPage {
     pub(super) factory: Arc<IXpsOMObjectFactory>,
@@ -76,14 +55,54 @@ impl XPSPage {
         return y >= (self.size.height - self.margin);
     }
 
-    pub fn add_text(
-        &mut self,
-        text: &str,
+    fn _get_glyph_run(
+        &self,
+        font: &IXpsOMFontResource,
         x: f32,
         y: f32,
         size: f32,
-        attributes: DrawingAttributes,
-    ) {
+        brush: IXpsOMSolidColorBrush,
+    ) -> Result<windows::Win32::Storage::Xps::IXpsOMGlyphs, Error> {
+        let glyphs = unsafe { self.factory.CreateGlyphs(font) }?;
+
+        unsafe { glyphs.SetOrigin(&XPS_POINT { x: x, y: y }) }?;
+        unsafe { glyphs.SetFontRenderingEmSize(size) }?;
+        unsafe { glyphs.SetFillBrushLocal(&brush) }?;
+
+        return Ok(glyphs);
+    }
+}
+
+impl PageBuilder for XPSPage {
+    fn get_dimnensions(&self) -> (f32, f32) {
+        return (self.size.width, self.size.height);
+    }
+
+    fn max_lines_before_overflow(&self, y: f32, font_size: f32, attrs: DrawingAttributes) -> usize {
+        let mut curr_y = y;
+        let mut lines = 0;
+        while !self.should_wrap(curr_y) {
+            curr_y += LINE_HEIGHT;
+            lines += 1;
+        }
+        return lines; // TODO: validate this
+    }
+
+    fn will_multiline_overflow(
+        &self,
+        line_count: usize,
+        y: f32,
+        font_size: f32,
+        attrs: DrawingAttributes,
+    ) -> bool {
+        let mut curr_y = y;
+        for _ in 0..line_count {
+            curr_y += LINE_HEIGHT;
+        }
+        return self.should_wrap(curr_y);
+    }
+
+    fn add_text(&mut self, text: &str, x: f32, y: f32, size: f32, attributes: DrawingAttributes) {
         debug_assert!(x >= self.margin);
         debug_assert!(x <= (self.size.width - self.margin));
         debug_assert!(y >= self.margin);
@@ -134,24 +153,7 @@ impl XPSPage {
         };
     }
 
-    fn _get_glyph_run(
-        &self,
-        font: &IXpsOMFontResource,
-        x: f32,
-        y: f32,
-        size: f32,
-        brush: IXpsOMSolidColorBrush,
-    ) -> Result<windows::Win32::Storage::Xps::IXpsOMGlyphs, Error> {
-        let glyphs = unsafe { self.factory.CreateGlyphs(font) }?;
-
-        unsafe { glyphs.SetOrigin(&XPS_POINT { x: x, y: y }) }?;
-        unsafe { glyphs.SetFontRenderingEmSize(size) }?;
-        unsafe { glyphs.SetFillBrushLocal(&brush) }?;
-
-        return Ok(glyphs);
-    }
-
-    pub fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes) {
+    fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes) {
         assert!(points.len() >= 2);
 
         let start = &points[0];
@@ -249,7 +251,7 @@ impl XPSPage {
     /// Adds multiple lines of text seperated by \n to the page.
     ///
     /// Returns the lowest y coordinate of the text.
-    pub fn add_multiline_text(
+    fn add_multiline_text(
         &mut self,
         text: String,
         x: f32,
@@ -272,7 +274,7 @@ impl XPSPage {
         return curr_y;
     }
 
-    pub fn add_horizontal_divider(&mut self, y: f32) {
+    fn add_horizontal_divider(&mut self, y: f32) {
         debug_assert!(y >= self.margin);
         debug_assert!(y <= (self.size.height - self.margin));
 

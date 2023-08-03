@@ -1,8 +1,9 @@
 use std::{path::Path, sync::Arc};
 
 use log::error;
+use serde::de::Error;
 use windows::{
-    core::{Error, HSTRING},
+    core::HSTRING,
     w,
     Win32::{
         Storage::{
@@ -16,9 +17,12 @@ use windows::{
     },
 };
 
-use crate::printing::xps_page::PAGE_SIZE_A4;
+use crate::printing::{
+    document::{Document, DocumentBuilder, DocumentBuildingError, PageBuilder, Saveable},
+    xps::page::PAGE_SIZE_A4,
+};
 
-use super::xps_page::XPSPage;
+use super::page::XPSPage;
 
 pub struct XPSSingleDocument {
     pub(super) factory: Arc<IXpsOMObjectFactory>,
@@ -31,8 +35,35 @@ pub struct XPSSingleDocument {
 }
 
 impl XPSSingleDocument {
-    pub fn page_at(&mut self, index: usize) -> Option<&mut XPSPage> {
-        return self.pages.get_mut(index);
+    pub fn new() -> Result<Self, windows::core::Error> {
+        let factory = unsafe { CoCreateInstance(&XpsOMObjectFactory, None, CLSCTX_INPROC_SERVER) };
+
+        if let Err(e) = factory {
+            error!("failed to create XPS Document: {:?}", e);
+            return Err(e);
+        }
+        let factory: IXpsOMObjectFactory = factory.unwrap();
+
+        let package = unsafe { factory.CreatePackage() };
+
+        let mut res = match package {
+            Ok(package) => Self {
+                factory: Arc::new(factory),
+                package: package,
+                pages: vec![],
+                document_fd: None,
+                document_sequence: None,
+                fixed_sequence_part: None,
+                document_part: None,
+            },
+            Err(e) => {
+                error!("failed to create XPS Document Package: {:?}", e);
+                return Err(e);
+            }
+        };
+
+        res.prepare_document();
+        return Ok(res);
     }
 
     fn prepare_document(&mut self) {
@@ -90,39 +121,22 @@ impl XPSSingleDocument {
         };
         self.document_fd = Some(doc);
     }
+}
 
-    pub fn new() -> Result<Self, Error> {
-        let factory = unsafe { CoCreateInstance(&XpsOMObjectFactory, None, CLSCTX_INPROC_SERVER) };
-
-        if let Err(e) = factory {
-            error!("failed to create XPS Document: {:?}", e);
-            return Err(e);
-        }
-        let factory: IXpsOMObjectFactory = factory.unwrap();
-
-        let package = unsafe { factory.CreatePackage() };
-
-        let mut res = match package {
-            Ok(package) => Self {
-                factory: Arc::new(factory),
-                package: package,
-                pages: vec![],
-                document_fd: None,
-                document_sequence: None,
-                fixed_sequence_part: None,
-                document_part: None,
-            },
-            Err(e) => {
-                error!("failed to create XPS Document Package: {:?}", e);
-                return Err(e);
-            }
-        };
-
-        res.prepare_document();
-        return Ok(res);
+impl DocumentBuilder for XPSSingleDocument {
+    fn begin(&mut self) -> Result<(), DocumentBuildingError> {
+        self.prepare_document();
+        return Ok(());
     }
 
-    pub fn newPage(&mut self) -> Result<usize, ()> {
+    fn page_at(&mut self, index: usize) -> Option<&mut dyn PageBuilder> {
+        return self
+            .pages
+            .get_mut(index)
+            .map(|page| page as &mut dyn PageBuilder);
+    }
+
+    fn new_page(&mut self) -> Result<usize, DocumentBuildingError> {
         assert!(self.document_fd.is_some());
 
         let part_uri_result = unsafe {
@@ -133,8 +147,9 @@ impl XPSSingleDocument {
         };
 
         let Ok(part_uri) = part_uri_result else {
-            error!("couldn't create page part uri: {:?}", part_uri_result.unwrap_err());
-            return Err(());
+            let e = part_uri_result.unwrap_err();
+            error!("couldn't create page part uri: {:?}", e);
+            return Err(DocumentBuildingError::Error(e.to_string()));
         };
 
         let page_result = unsafe {
@@ -143,15 +158,17 @@ impl XPSSingleDocument {
         };
 
         let Ok(page) = page_result else {
-            error!("couldn't create page: {:?}", page_result.unwrap_err());
-            return Err(());
+            let e = page_result.unwrap_err();
+            error!("couldn't create page: {:?}", e);
+            return Err(DocumentBuildingError::Error(e.to_string()));
         };
 
         let page_ref_result = unsafe { self.factory.CreatePageReference(&PAGE_SIZE_A4) };
 
         let Ok(xpsPageRef) = page_ref_result else {
-            error!("couldn't create page reference: {:?}", page_ref_result.unwrap_err());
-            return Err(());
+            let e = page_ref_result.unwrap_err();
+            error!("couldn't create page reference: {:?}", e);
+            return Err(DocumentBuildingError::Error((e).to_string()));
         };
 
         unsafe {
@@ -168,24 +185,28 @@ impl XPSSingleDocument {
         let page = XPSPage::new(Arc::clone(&self.factory), page);
         let Ok(page) = page else {
             error!("couldn't create page instance!");
-            return Err(());
+            return Err(DocumentBuildingError::Error("couldn't create page instance!".to_string()));
         };
 
         self.pages.push(page);
         return Ok(self.pages.len() - 1);
     }
+}
 
-    pub fn safe(&self, path: &Path) {
+impl Saveable for XPSSingleDocument {
+    fn save(&self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
         const FILE_ATTRIBUTE_NORMAL: u32 = 0x00000080; // for some reason this isn't defined in the winapi rust wrapper
-        unsafe {
-            self.package
-                .WriteToFile(
-                    &HSTRING::from(path.to_str().unwrap()),
-                    std::ptr::null(),
-                    FILE_ATTRIBUTE_NORMAL,
-                    false,
-                )
-                .unwrap();
+        let res = unsafe {
+            self.package.WriteToFile(
+                &HSTRING::from(path.to_str().unwrap()),
+                std::ptr::null(),
+                FILE_ATTRIBUTE_NORMAL,
+                false,
+            )
         }
+        .map_err(|e| {
+            Box::new(DocumentBuildingError::NestedError(Box::new(e))) as Box<dyn std::error::Error>
+        });
+        return res;
     }
 }

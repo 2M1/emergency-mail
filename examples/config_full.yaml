@@ -8,4 +8,4 @@ printing:
   min_copies: 2 # number of duplicate copies to be printed
   printer: "HP_LaserJet_500_Pro" # "HP_LaserJet_400_M401dn" # printer name // TODO: add instructions on how to get the printer name
   amt: 1 # AMT number (Funkkenner, ohne führende 0)
-  summatra_path: "C:\Users\Markus\AppData\Local\SumatraPDF\SumatraPDF.exe" # path to SumatraPDF
+  sumatra_path: "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe" # path to SumatraPDF

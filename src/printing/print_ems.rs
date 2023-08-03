@@ -1,25 +1,32 @@
-use std::{cmp::max, fs, path::Path, process::Command};
+use std::{cmp::max, fs, io::BufWriter, path::Path, process::Command, rc::Rc};
 
 use log::{error, info, trace};
 
 use crate::{
     config::Config,
     models::{either::Either, emergency::Emergency},
-    printing::com,
+    printing::{
+        document::{DocumentBuildingError, Saveable},
+        pdf::document::PDFDocument,
+        xps::print,
+    },
 };
 
 use super::{
-    print_xps::print_test,
-    xps_document::XPSSingleDocument,
-    xps_page::{DrawingAttributes, Point, XPSPage, LINE_HEIGHT},
+    document::{DocumentBuilder, DrawingAttributes, PageBuilder, Point},
+    xps::{
+        document::XPSSingleDocument,
+        page::{XPSPage, LINE_HEIGHT},
+    },
 };
 
-const LABEL_OFFSET: f32 = 180.0;
-const SECTION_OFFSET: f32 = 150.0;
-const CHAR_WIDTH_40: f32 = 25.0;
+const LABEL_OFFSET: f32 = 18.0;
+const SECTION_OFFSET: f32 = 15.0;
+const CHAR_WIDTH_40: f32 = 2.5;
 
 pub fn print_emergency(ems: Emergency, config: &Config) {
-    let doc = create_emergency_xps(&ems);
+    let mut doc = PDFDocument::new();
+    create_emergency_xps(&ems, &mut doc);
     let mut temp_dir = std::env::temp_dir();
     temp_dir.push(Path::new("emergency_mail\\"));
 
@@ -28,95 +35,85 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
         error!("couldn't create temp dir: {}", e);
         return;
     }
-    temp_dir.push("output.xps");
+    temp_dir.push("output.pdf");
+    let temp_dir = Path::new("test.pdf");
     trace!("saving to: {:?}", temp_dir);
-    doc.safe(&temp_dir);
+    let docref = doc.document;
+    let docref = Rc::try_unwrap(docref)
+        .map_err(|_| DocumentBuildingError::Error("couldn't unwrap document".to_string()))
+        .unwrap()
+        .into_inner();
+    let file = fs::File::create(&temp_dir).unwrap();
+    let mut writer = BufWriter::new(file);
+    docref.save(&mut writer).unwrap();
 
-    let mut binding = Command::new(&config.printing.sumatra_path);
-    if let Some(printer) = &config.printing.printer {
-        binding.arg("-print-to").arg(printer);
-    } else {
-        binding.arg("-print-to-default");
-    };
+    // let mut binding = Command::new(&config.printing.sumatra_path);
+    // if let Some(printer) = &config.printing.printer {
+    //     binding.arg("-print-to").arg(printer);
+    // } else {
+    //     binding.arg("-print-to-default");
+    // };
 
-    let command = binding.arg(temp_dir.to_str().expect("couldn't convert path to string"));
-    trace!("command: {:?}", command);
+    // let command = binding.arg(temp_dir.to_str().expect("couldn't convert path to string"));
+    // trace!("command: {:?}", command);
 
-    let res = command.output();
-    if let Err(e) = res {
-        error!("couldn't print xps: {}", e);
-    } else if let Ok(output) = res {
-        info!("printing xps returned: {}", output.status);
-        if !output.status.success() {
-            error!(
-                "couldn't print xps: {}",
-                String::from_utf8_lossy(&output.stderr)
-            );
-        }
-    }
-    print_test(doc);
+    // let res = command.output();
+    // if let Err(e) = res {
+    //     error!("couldn't print xps: {}", e);
+    // } else if let Ok(output) = res {
+    //     info!("printing xps returned: {}", output.status);
+    //     if !output.status.success() {
+    //         error!(
+    //             "couldn't print xps: {}",
+    //             String::from_utf8_lossy(&output.stderr)
+    //         );
+    //     }
+    // }
+    // print::print_test(doc);
 }
 
-fn add_emergency_header_section(ems: &Emergency, page: &mut XPSPage) {
+fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
     // create header blocks
 
     page.add_outline_polygon(
         &[
             Point {
                 x: SECTION_OFFSET,
-                y: 250.0,
+                y: 25.0,
             },
             Point {
                 x: SECTION_OFFSET,
-                y: 400.0,
+                y: 40.0,
             },
-            Point { x: 500.0, y: 400.0 },
-            Point { x: 500.0, y: 250.0 },
+            Point { x: 50.0, y: 40.0 },
+            Point { x: 50.0, y: 25.0 },
         ],
         DrawingAttributes::DEFAULT,
     );
     page.add_outline_polygon(
         &[
-            Point { x: 500.0, y: 250.0 },
-            Point { x: 500.0, y: 400.0 },
-            Point { x: 780.0, y: 400.0 },
-            Point { x: 780.0, y: 250.0 },
+            Point { x: 50.0, y: 25.0 },
+            Point { x: 50.0, y: 40.0 },
+            Point { x: 78.0, y: 40.0 },
+            Point { x: 78.0, y: 25.0 },
         ],
         DrawingAttributes::DEFAULT,
     );
     page.add_outline_polygon(
         &[
-            Point { x: 780.0, y: 250.0 },
-            Point { x: 780.0, y: 400.0 },
-            Point {
-                x: 1030.0,
-                y: 400.0,
-            },
-            Point {
-                x: 1030.0,
-                y: 250.0,
-            },
+            Point { x: 78.0, y: 25.0 },
+            Point { x: 78.0, y: 40.0 },
+            Point { x: 103.0, y: 40.0 },
+            Point { x: 103.0, y: 25.0 },
         ],
         DrawingAttributes::DEFAULT,
     );
     page.add_outline_polygon(
         &[
-            Point {
-                x: 1030.0,
-                y: 250.0,
-            },
-            Point {
-                x: 1030.0,
-                y: 400.0,
-            },
-            Point {
-                x: 1420.0,
-                y: 400.0,
-            },
-            Point {
-                x: 1420.0,
-                y: 250.0,
-            },
+            Point { x: 103.0, y: 25.0 },
+            Point { x: 103.0, y: 40.0 },
+            Point { x: 142.0, y: 40.0 },
+            Point { x: 142.0, y: 25.0 },
         ],
         DrawingAttributes::DEFAULT,
     );
@@ -125,30 +122,29 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut XPSPage) {
 
     page.add_text(
         "Einsatznummer:",
-        190.0,
-        340.0,
+        19.0,
+        34.0,
         40.0,
         DrawingAttributes::DEFAULT,
     );
-    page.add_text("Alarmzeit:", 810.0, 340.0, 40.0, DrawingAttributes::DEFAULT);
+    page.add_text("Alarmzeit:", 81.0, 34.0, 40.0, DrawingAttributes::DEFAULT);
 
     // add values:
 
     page.add_text(
         ems.emergency_number.to_string().as_str(),
-        540.0,
-        340.0,
+        54.0,
+        34.0,
         40.0,
         DrawingAttributes::TEXT_BOLD,
     );
 
     let time_str = ems.alarm_time.format("%d.%m.%y\n%H:%M").to_string(); // NOTE: seconds are not transmitted in the mail
-    page.add_multiline_text(time_str, 1060.0, 320.0, DrawingAttributes::TEXT_BOLD);
+    page.add_multiline_text(time_str, 106.0, 32.0, DrawingAttributes::TEXT_BOLD);
 }
 
-fn create_emergency_xps(ems: &Emergency) -> XPSSingleDocument {
-    let mut doc = XPSSingleDocument::new().unwrap();
-    let page_id = doc.newPage().unwrap();
+fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
+    let page_id = doc.new_page().unwrap();
     let page = doc.page_at(page_id).unwrap();
 
     add_emergency_header_section(ems, page);
@@ -178,7 +174,7 @@ fn create_emergency_xps(ems: &Emergency) -> XPSSingleDocument {
     //         DrawingAttributes::DEFAULT,
     //     );
     // }
-    let mut curr_y = 520.0;
+    let mut curr_y = 52.0;
 
     let text = format!("{}\n{}", ems.keyword, ems.code3);
     curr_y = add_optional_property(page, "Stichwort:", Some(text), curr_y);
@@ -204,13 +200,7 @@ fn create_emergency_xps(ems: &Emergency) -> XPSSingleDocument {
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
-            page.add_text(
-                "Hinweise",
-                150.0,
-                curr_y,
-                40.0,
-                DrawingAttributes::TEXT_BOLD,
-            );
+            page.add_text("Hinweise", 15.0, curr_y, 40.0, DrawingAttributes::TEXT_BOLD);
         }
         curr_y += LINE_HEIGHT * 1.5;
         curr_y = page.add_multiline_text(note, LABEL_OFFSET, curr_y, DrawingAttributes::TEXT_BOLD);
@@ -219,11 +209,14 @@ fn create_emergency_xps(ems: &Emergency) -> XPSSingleDocument {
     }
 
     create_unit_table(ems, page, curr_y);
-
-    return doc;
 }
 
-fn add_optional_property(page: &mut XPSPage, label: &str, p: Option<String>, y: f32) -> f32 {
+fn add_optional_property(
+    page: &mut dyn PageBuilder,
+    label: &str,
+    p: Option<String>,
+    y: f32,
+) -> f32 {
     let Some(property) = p else {
         return y;
     };
@@ -232,12 +225,17 @@ fn add_optional_property(page: &mut XPSPage, label: &str, p: Option<String>, y: 
     }
     let mut y = y;
     page.add_text(label, LABEL_OFFSET, y, 40.0, DrawingAttributes::DEFAULT);
-    y = page.add_multiline_text(property, 500.0, y, DrawingAttributes::TEXT_BOLD);
+    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
 
     return y + LINE_HEIGHT;
 }
 
-fn add_optional_ml_property(page: &mut XPSPage, label: String, p: Option<String>, y: f32) -> f32 {
+fn add_optional_ml_property(
+    page: &mut dyn PageBuilder,
+    label: String,
+    p: Option<String>,
+    y: f32,
+) -> f32 {
     let Some(property) = p else {
         return y;
     };
@@ -247,17 +245,17 @@ fn add_optional_ml_property(page: &mut XPSPage, label: String, p: Option<String>
     }
     let mut y = y;
     page.add_multiline_text(label, LABEL_OFFSET, y, DrawingAttributes::DEFAULT);
-    y = page.add_multiline_text(property, 500.0, y, DrawingAttributes::TEXT_BOLD);
+    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
 
     return y + LINE_HEIGHT;
 }
 
-fn create_unit_table(ems: &Emergency, page: &mut XPSPage, start_y: f32) {
+fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) {
     let mut start_y = start_y;
     // create header:
     page.add_text(
         "Alarmierungen",
-        150.0,
+        15.0,
         start_y,
         40.0,
         DrawingAttributes::TEXT_BOLD,
@@ -275,7 +273,7 @@ fn create_unit_table(ems: &Emergency, page: &mut XPSPage, start_y: f32) {
         LABEL_OFFSET,
         start_y,
     );
-    let x_offset = CHAR_WIDTH_40 * max_len as f32 + LABEL_OFFSET + 20.0;
+    let x_offset = CHAR_WIDTH_40 * max_len as f32 + LABEL_OFFSET + 2.0;
 
     // create column 2 (wache):
     let max_len = add_column(
@@ -285,7 +283,7 @@ fn create_unit_table(ems: &Emergency, page: &mut XPSPage, start_y: f32) {
         x_offset,
         start_y,
     );
-    let x_offset = x_offset + CHAR_WIDTH_40 * max_len as f32 + 20.0;
+    let x_offset = x_offset + CHAR_WIDTH_40 * max_len as f32 + 2.0;
 
     // create column 3 (alarm time):
     let _max_len = add_column(
@@ -297,7 +295,7 @@ fn create_unit_table(ems: &Emergency, page: &mut XPSPage, start_y: f32) {
     );
 }
 
-fn add_column<'a, I>(label: &str, values: I, page: &mut XPSPage, x: f32, y: f32) -> usize
+fn add_column<'a, I>(label: &str, values: I, page: &mut dyn PageBuilder, x: f32, y: f32) -> usize
 where
     I: Iterator<Item = String>,
 {
