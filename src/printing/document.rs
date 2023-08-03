@@ -6,8 +6,6 @@ use std::{
 
 use crate::config::Config;
 
-
-
 #[derive(Debug, Clone, Copy)]
 pub struct Point {
     pub x: f32,
