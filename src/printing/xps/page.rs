@@ -276,6 +276,7 @@ impl PageBuilder for XPSPage {
         text: String,
         x: f32,
         start_y: f32,
+        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32 {
         let x = x * COORDINATE_MUKTIPLIER;
@@ -290,7 +291,7 @@ impl PageBuilder for XPSPage {
 
         let mut curr_y = start_y;
         for line in lines {
-            self.add_text(line, x / 10.0, curr_y / 10.0, 40.0, attributes);
+            self.add_text(line, x / 10.0, curr_y / 10.0, font_size, attributes);
             curr_y += LINE_HEIGHT;
         }
 

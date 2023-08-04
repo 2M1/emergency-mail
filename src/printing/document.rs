@@ -97,6 +97,7 @@ pub trait PageBuilder {
         text: String,
         x: f32,
         y: f32,
+        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32;
 

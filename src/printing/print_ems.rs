@@ -5,6 +5,7 @@ use log::{error, trace};
 use crate::{
     config::Config,
     models::{either::Either, emergency::Emergency},
+    points_to_mm,
     printing::{
         document::{DocumentBuildingError, Saveable},
         pdf::document::PDFDocument,
@@ -119,7 +120,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
 
     page.add_text(
         "Einsatznummer:",
-        19.0,
+        16.0,
         34.0,
         DEFAULT_FONT_SIZE,
         DrawingAttributes::DEFAULT,
@@ -136,14 +137,20 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
 
     page.add_text(
         ems.emergency_number.to_string().as_str(),
-        54.0,
+        52.0,
         34.0,
         DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
 
     let time_str = ems.alarm_time.format("%d.%m.%y\n%H:%M").to_string(); // NOTE: seconds are not transmitted in the mail
-    page.add_multiline_text(time_str, 106.0, 32.0, DrawingAttributes::TEXT_BOLD);
+    page.add_multiline_text(
+        time_str,
+        106.0,
+        32.0,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::TEXT_BOLD,
+    );
 }
 
 fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
@@ -199,7 +206,7 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     page.add_horizontal_divider(curr_y);
 
-    curr_y += LINE_HEIGHT;
+    curr_y += points_to_mm!(LINE_HEIGHT);
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
@@ -211,10 +218,16 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
                 DrawingAttributes::TEXT_BOLD,
             );
         }
-        curr_y += LINE_HEIGHT * 1.5;
-        curr_y = page.add_multiline_text(note, LABEL_OFFSET, curr_y, DrawingAttributes::TEXT_BOLD);
+        curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
+        curr_y = page.add_multiline_text(
+            note,
+            LABEL_OFFSET,
+            curr_y,
+            DEFAULT_FONT_SIZE,
+            DrawingAttributes::TEXT_BOLD,
+        );
         page.add_horizontal_divider(curr_y);
-        curr_y += LINE_HEIGHT;
+        curr_y += points_to_mm!(LINE_HEIGHT);
     }
 
     create_unit_table(ems, page, curr_y);
@@ -240,9 +253,15 @@ fn add_optional_property(
         DEFAULT_FONT_SIZE,
         DrawingAttributes::DEFAULT,
     );
-    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
+    y = page.add_multiline_text(
+        property,
+        50.0,
+        y,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::TEXT_BOLD,
+    );
 
-    return y;
+    return y + points_to_mm!(LINE_HEIGHT);
 }
 
 fn add_optional_ml_property(
@@ -259,10 +278,22 @@ fn add_optional_ml_property(
         return y;
     }
     let mut y = y;
-    page.add_multiline_text(label, LABEL_OFFSET, y, DrawingAttributes::DEFAULT);
-    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
+    page.add_multiline_text(
+        label,
+        LABEL_OFFSET,
+        y,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::DEFAULT,
+    );
+    y = page.add_multiline_text(
+        property,
+        50.0,
+        y,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::TEXT_BOLD,
+    );
 
-    return y + LINE_HEIGHT;
+    return y + points_to_mm!(LINE_HEIGHT);
 }
 
 fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) {
@@ -275,7 +306,7 @@ fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) 
         DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
-    start_y += LINE_HEIGHT * 1.5;
+    start_y += LINE_HEIGHT;
 
     // create column 1 (radio id):
     let max_len = add_column(
@@ -327,7 +358,7 @@ where
             DrawingAttributes::DEFAULT,
         );
         max_len = max(max_len, value.len());
-        y += LINE_HEIGHT;
+        y += points_to_mm!(LINE_HEIGHT) * 1.5;
     }
     max_len
 }

@@ -5,7 +5,10 @@ use printpdf::{
     PdfPageIndex, Rgb,
 };
 
-use crate::printing::document::{DrawingAttributes, PageBuilder, Point};
+use crate::{
+    points_to_mm,
+    printing::document::{DrawingAttributes, PageBuilder, Point},
+};
 
 #[derive(Clone)]
 pub struct PDFPage {
@@ -16,6 +19,8 @@ pub struct PDFPage {
 }
 
 pub const MARGIN_HORIZONTAL: f64 = 15.0;
+/// the height of one line in pts
+/// use the [point_to_mm!()] macro to convert to mm
 pub const LINE_HEIGHT: f32 = 13.0;
 
 const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-Medium.ttf");
@@ -119,14 +124,8 @@ impl PageBuilder for PDFPage {
     ) {
         let doc = self.document.upgrade().unwrap();
         let doc = doc.borrow();
-        let font_path = if attributes.text_bold {
-            "C:\\Windows\\Fonts\\ARIALNB.ttf"
-        } else {
-            "C:\\Windows\\Fonts\\ARIAL.ttf"
-        };
-        let font = doc
-            .add_external_font(File::open(font_path).unwrap())
-            .unwrap();
+
+        let font = self.get_font(attributes.text_bold);
         let layer = doc.get_page(self.nr).get_layer(self.layer);
 
         layer.use_text(
@@ -153,6 +152,7 @@ impl PageBuilder for PDFPage {
         text: String,
         x: f32,
         y: f32,
+        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32 {
         let layer = self
@@ -167,16 +167,17 @@ impl PageBuilder for PDFPage {
 
         layer.begin_text_section();
 
-        layer.set_font(&font, 12.0);
+        let font_size = font_size as f64;
+        layer.set_font(&font, font_size);
         layer.set_text_cursor(Mm(x as f64), Mm(self.dimensions.1 - y as f64));
-        layer.set_line_height(12.0);
+        layer.set_line_height(font_size + 1.0);
 
         let mut curr_y = y;
         let lines = text.split("\n");
         for line in lines {
             layer.write_text(line, &font);
             layer.add_line_break();
-            curr_y += LINE_HEIGHT;
+            curr_y += points_to_mm!(LINE_HEIGHT);
         }
 
         layer.end_text_section();
