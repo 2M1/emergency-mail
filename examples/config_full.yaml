@@ -5,7 +5,7 @@ imap:
   password: "def" # leave empty to use the environment variable EM_SMTP_PASSWORD
 interval: 25 # in minutes
 printing:
-  min_copies: 2 # number of duplicate copies to be printed
+  min_copies: 1 # number of duplicate copies to be printed
   printer: "HP_LaserJet_500_Pro" # "HP_LaserJet_400_M401dn" # printer name // TODO: add instructions on how to get the printer name
   amt: 1 # AMT number (Funkkenner, ohne führende 0)
   sumatra_path: "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe" # path to SumatraPDF

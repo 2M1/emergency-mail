@@ -6,8 +6,8 @@ Work in progress.
 
 ## TODO
 - [ ] Parse unit table based on table headers
-- [ ] generate pdf
-- [ ] print with sumatraPDF or Adobe (both cli)
+- [-] generate pdf (mostly working)
+- [-] print with sumatraPDF or Adobe (both cli) (sumatra working)
 - [ ] notify user/admin on error (add text to printout or popup warning or email)
 - [ ] print times the number of alarmed engines from the amt
 

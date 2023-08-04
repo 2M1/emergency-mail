@@ -1,0 +1,10 @@
+# auto line endings to lf
+* text=auto eol=lf
+
+# don't mess with binary files
+*.png binary
+*.tiff binary
+
+# ignore example files
+example/emergency_*.txt text eol=crlf
+

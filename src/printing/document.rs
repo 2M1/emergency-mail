@@ -120,7 +120,7 @@ pub trait PageBuilder {
 }
 
 pub trait Printable {
-    fn print(&self, config: &Config);
+    fn print(&self, times: usize, config: &Config);
 }
 
 pub trait Saveable {

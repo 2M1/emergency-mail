@@ -7,8 +7,8 @@ use crate::{
     models::{either::Either, emergency::Emergency},
     points_to_mm,
     printing::{
-        document::{DocumentBuildingError, Saveable},
-        pdf::document::PDFDocument,
+        document::{DocumentBuildingError, Printable},
+        pdf::{document::PDFDocument, print_pdf::PDFFilePrinter},
     },
 };
 
@@ -22,7 +22,7 @@ const SECTION_OFFSET: f32 = 15.0;
 const CHAR_WIDTH_40: f32 = 2.5;
 const DEFAULT_FONT_SIZE: f32 = 12.0;
 
-pub fn print_emergency(ems: Emergency, _config: &Config) {
+pub fn print_emergency(ems: Emergency, config: &Config) {
     let mut doc = PDFDocument::new();
     create_emergency_xps(&ems, &mut doc);
     let mut temp_dir = std::env::temp_dir();
@@ -34,7 +34,9 @@ pub fn print_emergency(ems: Emergency, _config: &Config) {
         return;
     }
     temp_dir.push("output.pdf");
-    let temp_dir = Path::new("test.pdf");
+    if cfg!(debug_assertions) {
+        temp_dir = Path::new("test.pdf").to_path_buf();
+    }
     trace!("saving to: {:?}", temp_dir);
     let docref = doc.document;
     let docref = Rc::try_unwrap(docref)
@@ -45,29 +47,8 @@ pub fn print_emergency(ems: Emergency, _config: &Config) {
     let mut writer = BufWriter::new(file);
     docref.save(&mut writer).unwrap();
 
-    // let mut binding = Command::new(&config.printing.sumatra_path);
-    // if let Some(printer) = &config.printing.printer {
-    //     binding.arg("-print-to").arg(printer);
-    // } else {
-    //     binding.arg("-print-to-default");
-    // };
-
-    // let command = binding.arg(temp_dir.to_str().expect("couldn't convert path to string"));
-    // trace!("command: {:?}", command);
-
-    // let res = command.output();
-    // if let Err(e) = res {
-    //     error!("couldn't print xps: {}", e);
-    // } else if let Ok(output) = res {
-    //     info!("printing xps returned: {}", output.status);
-    //     if !output.status.success() {
-    //         error!(
-    //             "couldn't print xps: {}",
-    //             String::from_utf8_lossy(&output.stderr)
-    //         );
-    //     }
-    // }
-    // print::print_test(doc);
+    let printer = PDFFilePrinter::new(&temp_dir);
+    printer.print(1, config);
 }
 
 fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
