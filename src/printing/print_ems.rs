@@ -242,7 +242,7 @@ fn add_optional_property(
     );
     y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::TEXT_BOLD);
 
-    return y + LINE_HEIGHT;
+    return y;
 }
 
 fn add_optional_ml_property(

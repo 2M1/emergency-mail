@@ -1,7 +1,8 @@
 use std::{cell::RefCell, fs::File, rc::Weak};
 
 use printpdf::{
-    Color, DirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
+    Color, DirectFontRef, IndirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex,
+    PdfPageIndex, Rgb,
 };
 
 use crate::printing::document::{DrawingAttributes, PageBuilder, Point};
@@ -16,6 +17,9 @@ pub struct PDFPage {
 
 pub const MARGIN_HORIZONTAL: f64 = 15.0;
 pub const LINE_HEIGHT: f32 = 13.0;
+
+const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-Medium.ttf");
+const FONT_BOLD: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-ExtraBold.ttf");
 
 impl PDFPage {
     pub fn new(
@@ -43,6 +47,14 @@ impl PDFPage {
         layer.set_outline_color(Color::Rgb(Rgb::new(0.0, 0.0, 0.0, None)));
 
         return page;
+    }
+
+    // helpers:
+    fn get_font(&mut self, bold: bool) -> IndirectFontRef {
+        let doc = self.document.upgrade().unwrap();
+        let doc = doc.borrow();
+        let font_stream = if bold { FONT_BOLD } else { FONT_MEDIUM };
+        return doc.add_external_font(font_stream).unwrap();
     }
 }
 
@@ -138,13 +150,38 @@ impl PageBuilder for PDFPage {
 
     fn add_multiline_text(
         &mut self,
-        _text: String,
-        _x: f32,
+        text: String,
+        x: f32,
         y: f32,
-        _attributes: DrawingAttributes,
+        attributes: DrawingAttributes,
     ) -> f32 {
-        // TODO: implement
-        return y;
+        let layer = self
+            .document
+            .upgrade()
+            .unwrap()
+            .borrow()
+            .get_page(self.nr)
+            .get_layer(self.layer);
+
+        let font = self.get_font(attributes.text_bold);
+
+        layer.begin_text_section();
+
+        layer.set_font(&font, 12.0);
+        layer.set_text_cursor(Mm(x as f64), Mm(self.dimensions.1 - y as f64));
+        layer.set_line_height(12.0);
+
+        let mut curr_y = y;
+        let lines = text.split("\n");
+        for line in lines {
+            layer.write_text(line, &font);
+            layer.add_line_break();
+            curr_y += LINE_HEIGHT;
+        }
+
+        layer.end_text_section();
+
+        return curr_y;
     }
 
     fn will_multiline_overflow(
