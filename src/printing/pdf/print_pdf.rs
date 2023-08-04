@@ -1,6 +1,6 @@
 use std::{cmp::max, path::Path, process::Command};
 
-use log::{error, info, trace};
+use log::trace;
 
 use crate::printing::document::Printable;
 
@@ -14,13 +14,15 @@ impl<'a> PDFFilePrinter<'a> {
     }
 
     #[cfg(debug_assertions)]
-    fn _run_print_cmd(&self, mut binding: Command) {
+    fn _run_print_cmd(&self, mut _binding: Command) {
         // do nothing in debug mode
         trace!("skipping print command in debug mode");
     }
 
     #[cfg(not(debug_assertions))]
     fn _run_print_cmd(&self, mut binding: Command) {
+        use log::{error, info}; // not at top of file to avoid the unused import warning
+
         let res = command.output();
         if let Err(e) = res {
             error!("couldn't print pdf file: {}", e);

@@ -14,6 +14,7 @@ pub struct IMAPConfig {
 pub struct PrintingConfig {
     pub printer: Option<String>, // None indicates, that the default system printer should be used
     pub min_copies: u8,
+    pub max_copies: Option<u8>,
     pub amt: u8,
     pub sumatra_path: String,
 }
