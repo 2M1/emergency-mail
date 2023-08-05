@@ -212,15 +212,10 @@ impl FromStr for Emergency {
                         warn!("Found multiple alarm table headers in line {}!", line_nr);
                     }
 
-                    header_indicies = Some(parse_alarm_table_header(
-                        &mut in_stream,
-                        &mut ems,
-                        &mut line_nr,
-                    ));
+                    header_indicies = Some(parse_alarm_table_header(&mut in_stream, &mut line_nr));
                     continue; // skip the line end ~~ skip, since we already parsed it
                 }
                 "ALARM" => {
-                    info!("Found alarm table entry in line {}!", line_nr);
                     if let None = header_indicies {
                         warn!(
                             "Found alarm table entry before header in line {}! skipping!",
@@ -258,7 +253,8 @@ impl FromStr for Emergency {
                     let _ = read_value(&mut in_stream);
                 }
                 "Einsatzortzusatz" => {
-                    let _ = read_value(&mut in_stream);
+                    let addition = read_value(&mut in_stream);
+                    ems.location_addition = (!addition.is_empty()).then(|| addition);
                 }
                 "Alarmzeit" => {
                     let time_str = read_value(&mut in_stream);
@@ -296,7 +292,6 @@ impl FromStr for Emergency {
 
 fn parse_alarm_table_header(
     in_stream: &mut Peekable<Chars<'_>>,
-    ems: &mut Emergency,
     line_nr: &mut u64,
 ) -> AlarmTableIndices {
     let mut indices = AlarmTableIndices {
@@ -398,9 +393,10 @@ fn parse_alarm_table_entry(
         Ok(id) => Either::Left(id),
         Err(e) => {
             trace!(
-                "Failed to parse RadioIdentifier {} in line {}, using bare.",
+                "Failed to parse RadioIdentifier {} in line {}: {}, using bare.",
                 entries[headers.unit],
-                *line_nr
+                *line_nr,
+                e
             );
             Either::Right(id_str)
         }

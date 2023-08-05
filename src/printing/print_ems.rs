@@ -30,7 +30,7 @@ const DEFAULT_FONT_SIZE: f32 = 12.0;
 
 pub fn print_emergency(ems: Emergency, config: &Config) {
     let mut doc = PDFDocument::new();
-    create_emergency_xps(&ems, &mut doc);
+    create_emergency_doc(&ems, &mut doc);
     let mut temp_dir = std::env::temp_dir();
     temp_dir.push(Path::new("emergency_mail\\"));
 
@@ -161,37 +161,12 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
     );
 }
 
-fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
+fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
     let page_id = doc.new_page().unwrap();
     let page = doc.page_at(page_id).unwrap();
 
     add_emergency_header_section(ems, page);
 
-    // let labels = [
-    //     "Stichwort:",
-    //     "Einsatzort:",
-    //     "sonst.",
-    //     "Ortsangaben:",
-    //     "AAO:",
-    //     "FWPlan-Nr:",
-    //     "Meldender:",
-    //     "Patient 1:",
-    //     "Zielort:",
-    //     "Ereignis:",
-    // ];
-    // let label_offsets = [
-    //     520.0, 740.0, 940.0, 990.0, 1090.0, 1200.0, 1300.0, 1410.0, 1610.0, 1810.0,
-    // ];
-
-    // for (i, label) in labels.iter().enumerate() {
-    //     page.add_text(
-    //         label.to_string(),
-    //         LABEL_OFFSET,
-    //         label_offsets[i],
-    //         40.0,
-    //         DrawingAttributes::DEFAULT,
-    //     );
-    // }
     let mut curr_y = 52.0;
 
     let text = format!("{}\n{}", ems.keyword, ems.code3);
@@ -202,7 +177,7 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
     curr_y = add_optional_ml_property(
         page,
         "sonst.\nOrtsangaben:".to_string(),
-        Some(ems.location.clone()),
+        ems.location_addition.clone(),
         curr_y,
     );
 
@@ -210,11 +185,11 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     // TODO: meldender?
 
-    curr_y = add_optional_property(page, "Patient 1:", ems.patient_name.clone(), curr_y);
+    curr_y = add_optional_property(page, "Patient 1:", ems.get_patient_name(), curr_y);
 
     page.add_horizontal_divider(curr_y);
 
-    curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
+    curr_y += points_to_mm!(LINE_HEIGHT) * 1.2;
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
@@ -235,7 +210,7 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
             DrawingAttributes::TEXT_BOLD,
         );
         page.add_horizontal_divider(curr_y);
-        curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
+        curr_y += points_to_mm!(LINE_HEIGHT) * 1.2;
     }
 
     create_unit_table(ems, page, curr_y);
@@ -269,7 +244,7 @@ fn add_optional_property(
         DrawingAttributes::TEXT_BOLD,
     );
 
-    return y + points_to_mm!(LINE_HEIGHT);
+    return y + points_to_mm!(LINE_HEIGHT) * 1.2;
 }
 
 fn add_optional_ml_property(
@@ -301,7 +276,7 @@ fn add_optional_ml_property(
         DrawingAttributes::TEXT_BOLD,
     );
 
-    return y + points_to_mm!(LINE_HEIGHT);
+    return y + points_to_mm!(LINE_HEIGHT) * 1.2;
 }
 
 fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) {
@@ -314,7 +289,7 @@ fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) 
         DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
-    start_y += LINE_HEIGHT;
+    start_y += points_to_mm!(LINE_HEIGHT) * 2.0;
 
     // create column 1 (radio id):
     let max_len = add_column(
@@ -327,7 +302,7 @@ fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) 
         LABEL_OFFSET,
         start_y,
     );
-    let x_offset = CHAR_WIDTH_40 * max_len as f32 + LABEL_OFFSET + 2.0;
+    let x_offset = CHAR_WIDTH_40 * max_len as f32 + LABEL_OFFSET + 8.0;
 
     // create column 2 (wache):
     let max_len = add_column(
@@ -337,7 +312,7 @@ fn create_unit_table(ems: &Emergency, page: &mut dyn PageBuilder, start_y: f32) 
         x_offset,
         start_y,
     );
-    let x_offset = x_offset + CHAR_WIDTH_40 * max_len as f32 + 2.0;
+    let x_offset = x_offset + CHAR_WIDTH_40 * max_len as f32 + 8.0;
 
     // create column 3 (alarm time):
     let _max_len = add_column(
@@ -354,7 +329,7 @@ where
     I: Iterator<Item = String>,
 {
     page.add_text(label, x, y, DEFAULT_FONT_SIZE, DrawingAttributes::TEXT_BOLD);
-    let mut y = y + LINE_HEIGHT;
+    let mut y = y + points_to_mm!(LINE_HEIGHT) * 1.5;
     let mut max_len = label.len() + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label
 
     for value in values {

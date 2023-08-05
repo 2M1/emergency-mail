@@ -1,8 +1,7 @@
-use std::{cell::RefCell, fs::File, rc::Weak};
+use std::{cell::RefCell, rc::Weak};
 
 use printpdf::{
-    Color, DirectFontRef, IndirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex,
-    PdfPageIndex, Rgb,
+    Color, IndirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
 };
 
 use crate::{
@@ -21,7 +20,7 @@ pub struct PDFPage {
 pub const MARGIN_HORIZONTAL: f64 = 15.0;
 /// the height of one line in pts
 /// use the [point_to_mm!()] macro to convert to mm
-pub const LINE_HEIGHT: f32 = 13.0;
+pub const LINE_HEIGHT: f32 = 14.0;
 
 const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-Medium.ttf");
 const FONT_BOLD: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-ExtraBold.ttf");

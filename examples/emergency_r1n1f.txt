@@ -1,0 +1,26 @@
+~~Ort~~Kleinmachnow~~
+~~Ortsteil~~Kleinmachnow~~
+~~Ortslage~~~~
+~~Strasse~~Am Bannwald~~
+~~Hausnummer~~1~~
+~~Objekt~~Feuerwache Kleinmachnow~~
+~~FWPlan~~0101025~~
+~~Objektteil~~~~
+~~Objektnummer~~-1~~
+~~Einsatzart~~Rettungseinsatz~~
+~~Alarmgrund~~R1N1f~~
+~~Sondersignal~~mit Sondersignal~~
+~~Einsatznummer~~12387987~~
+~~Besonderheiten~~Zustand nach Kettensägenunfall, schwere Blutungen~~
+~~Name~~S.,Ferris~~
+~~EMListe~~FL PM 01/85-01, RT PM 03/82-01, RT PM 03/83-01~~
+~~Status~~Tableau-Adresse~~Wache~~Fahrzeug~~Alarmiert~~Ausgerückt~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnowø~~FL PM 01/85-01~~18:35~~~~
+~~ALARM~~unbekannt#~~PM RW Teltowø~~RT PM 03/82-01~~18:35~~~~
+~~ALARM~~unbekannt#~~PM RW Teltowø~~RT PM 03/83-01~~18:35~~~~
+~~WGS84_X~~52.0~~
+~~WGS84_Y~~13.0~~
+~~Koord_EPSG_25833~~13.0~~52.0~~
+~~Koord_EPSG_4326~~E1300~~N5200~~
+~~Einsatzortzusatz~~~~
+~~Alarmzeit~~02.08.23&06:05~~

@@ -11,6 +11,7 @@ use crate::{
 const TEST_MAIL_CONTENT: &str = include_str!("../../examples/emergency_simple.txt");
 
 #[test]
+#[allow(deprecated)]
 fn test_parse_emergency() {
     logging::init_logging();
     let ems = Emergency::from_str(TEST_MAIL_CONTENT).unwrap();

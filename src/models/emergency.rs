@@ -7,6 +7,7 @@ pub struct Emergency {
     pub town: String,
     pub district: String,
     pub location: String,
+    pub location_addition: Option<String>,
     pub street: String,
     pub house_number: String,
     pub object: Option<String>,
@@ -62,6 +63,11 @@ impl Emergency {
         s.push_str("\n");
         s.push_str(&self.district);
 
+        if !self.location.is_empty() && self.location != self.district {
+            s.push_str("\n");
+            s.push_str(&self.location);
+        }
+
         // if let Some(o) = &self.object_part {
         //     s.push_str(" ");
         //     s.push_str(o);
@@ -72,5 +78,15 @@ impl Emergency {
         // }
 
         return s;
+    }
+
+    pub fn get_patient_name(&self) -> Option<String> {
+        if let Some(name) = &self.patient_name {
+            let (last, first) = name.split_at(name.find(",").unwrap_or(name.len()));
+            let first = &first[1..]; // the , of the first name is now the first char of first
+            return Some(format!("{} {}", first, last));
+        } else {
+            return None;
+        }
     }
 }

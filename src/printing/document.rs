@@ -34,6 +34,7 @@ impl Display for DocumentBuildingError {
 }
 
 impl Error for DocumentBuildingError {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         match self {
             DocumentBuildingError::NestedError(e) => e.description(),

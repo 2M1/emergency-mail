@@ -1,6 +1,8 @@
-use std::{cmp::max, path::Path, process::Command};
+use std::{path::Path, process::Command};
 
 use log::trace;
+#[cfg(not(debug_assertions))]
+use log::{error, info}; // avoid the unused import warning
 
 use crate::printing::document::Printable;
 
@@ -20,9 +22,7 @@ impl<'a> PDFFilePrinter<'a> {
     }
 
     #[cfg(not(debug_assertions))]
-    fn _run_print_cmd(&self, mut binding: Command) {
-        use log::{error, info}; // not at top of file to avoid the unused import warning
-
+    fn _run_print_cmd(&self, mut command: Command) {
         let res = command.output();
         if let Err(e) = res {
             error!("couldn't print pdf file: {}", e);
@@ -50,6 +50,8 @@ impl<'a> Printable for PDFFilePrinter<'a> {
             times >= config.printing.min_copies as usize,
             "times must be greater than or equal to min_copies"
         );
+
+        let times = if cfg!(debug_assertions) { 1 } else { times };
 
         let mut binding = Command::new(&config.printing.sumatra_path);
         if let Some(printer) = &config.printing.printer {
