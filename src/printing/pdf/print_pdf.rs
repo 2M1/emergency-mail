@@ -40,16 +40,24 @@ impl<'a> PDFFilePrinter<'a> {
 
 impl<'a> Printable for PDFFilePrinter<'a> {
     fn print(&self, times: usize, config: &crate::config::Config) {
+        // assumes, that times was computed beforehand and is inside the configured bounds
+        debug_assert!(times > 0, "times must be greater than 0");
+        debug_assert!(
+            times <= config.printing.max_copies.unwrap_or(255) as usize,
+            "times must be less than or equal to max_copies"
+        );
+        debug_assert!(
+            times >= config.printing.min_copies as usize,
+            "times must be greater than or equal to min_copies"
+        );
+
         let mut binding = Command::new(&config.printing.sumatra_path);
         if let Some(printer) = &config.printing.printer {
             binding.arg("-print-to").arg(printer);
         } else {
             binding.arg("-print-to-default");
         };
-        binding.arg("-print-settings").arg(format!(
-            "{}x",
-            max(times, config.printing.min_copies as usize)
-        ));
+        binding.arg("-print-settings").arg(format!("{}x", times));
 
         let command = binding.arg(self.path.to_str().expect("couldn't convert path to string"));
         trace!("command: {:?}", command);

@@ -13,7 +13,7 @@ fn test_from_str() {
     assert_eq!(config.imap.username, "abc");
     assert_eq!(config.imap.password, "def");
     assert_eq!(config.interval, 25);
-    assert_eq!(config.printing.min_copies, 1);
+    assert_eq!(config.printing.min_copies, 2);
     assert_eq!(config.printing.max_copies, Some(5));
     assert_eq!(
         config.printing.printer,
@@ -30,7 +30,7 @@ fn test_parse_file() {
     assert_eq!(config.imap.username, "abc");
     assert_eq!(config.imap.password, "def");
     assert_eq!(config.interval, 25);
-    assert_eq!(config.printing.min_copies, 1);
+    assert_eq!(config.printing.min_copies, 2);
     assert_eq!(config.printing.max_copies, Some(5));
     assert_eq!(
         config.printing.printer,

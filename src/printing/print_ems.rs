@@ -1,4 +1,10 @@
-use std::{cmp::max, fs, io::BufWriter, path::Path, rc::Rc};
+use std::{
+    cmp::{max, min},
+    fs,
+    io::BufWriter,
+    path::Path,
+    rc::Rc,
+};
 
 use log::{error, trace};
 
@@ -48,7 +54,28 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
     docref.save(&mut writer).unwrap();
 
     let printer = PDFFilePrinter::new(&temp_dir);
-    printer.print(1, config);
+    printer.print(count_copies(&ems, config), config);
+}
+
+pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
+    let mut count = 0;
+    for unit in &ems.unit_alarm_times {
+        match &unit.unit_id {
+            Either::Left(unit) => {
+                if unit.agency == config.printing.amt && unit.county == "PM" && unit.org == "FL" {
+                    // NOTE: county and ord are hardcoded for now!
+                    count += 1;
+                }
+            }
+            Either::Right(_) => {}
+        }
+    }
+
+    count = max(count, config.printing.min_copies as usize);
+    if let Some(max_copies) = config.printing.max_copies {
+        count = min(count, max_copies as usize);
+    }
+    return count;
 }
 
 fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {

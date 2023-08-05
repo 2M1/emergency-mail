@@ -415,7 +415,6 @@ fn parse_alarm_table_entry(
         station: vec_remove_replace(&mut entries, headers.station),
         alarm_time: vec_remove_replace(&mut entries, headers.alarm_time),
     };
-    println!("unit: {:?}", unit);
     ems.unit_alarm_times.push(unit);
 }
 

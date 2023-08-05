@@ -5,11 +5,11 @@
 Work in progress.
 
 ## TODO
-- [ ] Parse unit table based on table headers
+- [x] Parse unit table based on table headers
 - [-] generate pdf (mostly working)
 - [-] print with sumatraPDF or Adobe (both cli) (sumatra working)
 - [ ] notify user/admin on error (add text to printout or popup warning or email)
-- [ ] print times the number of alarmed engines from the amt
+- [x] print times the number of alarmed engines from the amt, also considers county and organisation (FL)
 
 ## possible futures:
 - [ ] add gui for status and reprint of last n Ems
