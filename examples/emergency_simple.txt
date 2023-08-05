@@ -30,11 +30,11 @@
 
 ~~EMListe~~FL BRB 01/16-21, RLS BRB DGL 2~~
 
-~~Status~~Fahrzeug~~Zuget~~Alarm~~Ausgerückt~~
+~~Status~~Tableau-Adresse~~Wache~~Fahrzeug~~Alarmiert~~Ausgerückt~~
 
 ~~ALARM~~unbekannt#~~BRB FW Brandenburg 1ø~~FL BRB 01/16-21~~08:21~~~~
 
-~~ALARM~~unbekannt#~~BRB FW Brandenburg 1ø~~FL BRB 01/16-21~~08:21~~~~
+~~ALARM~~unbekannt#~~BRB FW Brandenburg 1ø~~FL BRB 01/16-21~~08:22~~~~
 
 ~~ALARM~~unbekannt#~~BRB FW Brandenburg 1ø~~RLS BRB DGL 2~~08:23~~~~
 

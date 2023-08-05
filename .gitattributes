@@ -6,5 +6,5 @@
 *.tiff binary
 
 # ignore example files
-example/emergency_*.txt text eol=crlf
+examples/emergency_*.txt text eol=crlf
 

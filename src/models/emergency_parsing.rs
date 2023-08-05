@@ -1,10 +1,11 @@
 use std::{
+    cmp::max,
     iter::Peekable,
     str::{Chars, FromStr},
 };
 
 use chrono::NaiveDateTime;
-use log::{info, warn};
+use log::{info, trace, warn};
 
 use crate::models::{
     either::Either, radio_identifier::RadioIdentifier, unit_alarm_time::UnitAlarmTime,
@@ -89,6 +90,14 @@ macro_rules! check_error_skip_line {
     };
 }
 
+#[derive(Debug, Clone, Copy)]
+struct AlarmTableIndices {
+    unit: usize,
+    station: usize,
+    alarm_time: usize,
+    header_count: usize,
+}
+
 //
 // ------------------ Parsing ------------------
 //
@@ -99,9 +108,10 @@ impl FromStr for Emergency {
     // #[no_panic]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut ems = Emergency::default();
-        let mut line_nr = 0;
+        let mut line_nr = 1; // line numbers start at 1 (not 0!!!, lol)
 
         let mut in_stream = s.chars().peekable();
+        let mut header_indicies: Option<AlarmTableIndices> = None;
 
         while in_stream.peek().is_some() {
             skip_whitespace_count_lines(&mut in_stream, &mut line_nr);
@@ -197,43 +207,30 @@ impl FromStr for Emergency {
                     parse_dispatched_units(&mut in_stream, &mut ems);
                 }
 
-                "Status" => check_error_skip_line!(
-                    expect_literal(
+                "Status" => {
+                    if let Some(_) = header_indicies {
+                        warn!("Found multiple alarm table headers in line {}!", line_nr);
+                    }
+
+                    header_indicies = Some(parse_alarm_table_header(
                         &mut in_stream,
-                        "Fahrzeug~~Zuget~~Alarm~~Ausgerückt", // TODO: make dynamic, implement encoding correctly
-                        line_nr,
-                    ),
-                    in_stream,
-                    line_nr
-                ),
+                        &mut ems,
+                        &mut line_nr,
+                    ));
+                    continue; // skip the line end ~~ skip, since we already parsed it
+                }
                 "ALARM" => {
-                    let _status = read_value(&mut in_stream);
-                    check_error_skip_line!(
-                        expect_literal(&mut in_stream, "~~", line_nr),
-                        in_stream,
-                        line_nr
-                    );
-                    let unit = read_value(&mut in_stream);
-                    check_error_skip_line!(
-                        expect_literal(&mut in_stream, "~~", line_nr),
-                        in_stream,
-                        line_nr
-                    );
-                    let id = read_value(&mut in_stream);
-                    check_error_skip_line!(
-                        expect_literal(&mut in_stream, "~~", line_nr),
-                        in_stream,
-                        line_nr
-                    );
-                    let alarm_time = read_value(&mut in_stream);
-                    check_error_skip_line!(
-                        expect_literal(&mut in_stream, "~~", line_nr),
-                        in_stream,
-                        line_nr
-                    );
-                    let _responding = read_value(&mut in_stream);
-                    let unit_alarm_time = UnitAlarmTime::from_values(id, unit, alarm_time);
-                    ems.unit_alarm_times.push(unit_alarm_time);
+                    info!("Found alarm table entry in line {}!", line_nr);
+                    if let None = header_indicies {
+                        warn!(
+                            "Found alarm table entry before header in line {}! skipping!",
+                            line_nr
+                        );
+                        continue;
+                    } else if let Some(headers) = header_indicies {
+                        parse_alarm_table_entry(&mut in_stream, headers, &mut ems, &mut line_nr);
+                        continue; // skip the line end ~~ skip, since we already parsed it
+                    }
                 }
 
                 "WGS84_X" => {
@@ -295,6 +292,131 @@ impl FromStr for Emergency {
 
         return Ok(ems);
     }
+}
+
+fn parse_alarm_table_header(
+    in_stream: &mut Peekable<Chars<'_>>,
+    ems: &mut Emergency,
+    line_nr: &mut u64,
+) -> AlarmTableIndices {
+    let mut indices = AlarmTableIndices {
+        unit: 0,
+        station: 0,
+        alarm_time: 0,
+        header_count: 0,
+    };
+
+    // at the start we are in the ~~Status~~ line right after the Status~~ part.
+    // parse header for column indices
+    while in_stream.peek().is_some() {
+        let peek = in_stream.peek();
+        if let Some(peek) = peek {
+            if "\r\n".contains(*peek) {
+                break; // end of line, => end of header
+            }
+        }
+
+        let col = read_value(in_stream);
+
+        match col.as_str() {
+            "Fahrzeug" => indices.unit = indices.header_count,
+            "Zuget" => indices.unit = indices.header_count,
+            "Wache" => indices.station = indices.header_count,
+            "Alarm" => indices.alarm_time = indices.header_count,
+            "Alarmiert" => indices.alarm_time = indices.header_count,
+            "Tableau-Adresse" => {}
+            "Ausgerückt" => {}
+            _ => {
+                trace!("Unused column {} in alarm table in line {}!", col, *line_nr);
+            }
+        }
+        indices.header_count += 1;
+
+        let end_section = expect_literal(in_stream, "~~", *line_nr);
+        if let Err(e) = end_section {
+            warn!("missing '~~' to end alarm table header: {}", e);
+            continue;
+        }
+    }
+
+    println!("header: {:?}", indices);
+    return indices;
+}
+
+fn vec_remove_replace(vec: &mut Vec<String>, index: usize) -> String {
+    let elem = vec.remove(index);
+    vec.insert(index, String::new());
+    return elem;
+}
+
+fn parse_alarm_table_entry(
+    in_stream: &mut Peekable<Chars<'_>>,
+    headers: AlarmTableIndices,
+    ems: &mut Emergency,
+    line_nr: &mut u64,
+) {
+    // in_stream is directly after the ALARM~~ part
+    let mut entries: Vec<String> = Vec::with_capacity(headers.header_count);
+
+    while in_stream.peek().is_some() {
+        let peek = in_stream.peek();
+        if let Some(peek) = peek {
+            if "\r\n".contains(*peek) {
+                break; // end of line, => end of entry
+            }
+        }
+
+        let entry = read_value(in_stream);
+        entries.push(entry);
+
+        let end_section = expect_literal(in_stream, "~~", *line_nr);
+        if let Err(e) = end_section {
+            warn!("missing '~~' to end alarm table entry: {}", e);
+            skip_line(in_stream, line_nr);
+            return;
+        }
+    }
+    while entries.len() < headers.header_count {
+        entries.push(String::new());
+    }
+
+    // parse entry:
+    if entries.len() <= max(headers.unit, max(headers.station, headers.alarm_time)) {
+        warn!(
+            "Insufficent amount of alarm table entry values  ({}) columns in line {}!",
+            entries.len(),
+            *line_nr
+        );
+        skip_line(in_stream, line_nr);
+        return;
+    }
+    entries[headers.station] = entries[headers.station].replace("ø", "");
+
+    let id_str = vec_remove_replace(&mut entries, headers.unit);
+    let id = RadioIdentifier::from_str(&id_str);
+    let id = match id {
+        Ok(id) => Either::Left(id),
+        Err(e) => {
+            trace!(
+                "Failed to parse RadioIdentifier {} in line {}, using bare.",
+                entries[headers.unit],
+                *line_nr
+            );
+            Either::Right(id_str)
+        }
+    };
+    if entries[headers.station].is_empty() && entries[headers.alarm_time].is_empty() {
+        // this is an empty table entry, skip the entry, to display no units it
+        trace!("empty alarm table entry in line {}!", *line_nr);
+        return;
+    }
+    let unit = UnitAlarmTime {
+        unit_id: id,
+        station: vec_remove_replace(&mut entries, headers.station),
+        alarm_time: vec_remove_replace(&mut entries, headers.alarm_time),
+    };
+    println!("unit: {:?}", unit);
+    ems.unit_alarm_times.push(unit);
 }
 
 fn parse_dispatched_units(in_stream: &mut Peekable<Chars<'_>>, ems: &mut Emergency) {

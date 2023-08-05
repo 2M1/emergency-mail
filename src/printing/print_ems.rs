@@ -187,7 +187,7 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     page.add_horizontal_divider(curr_y);
 
-    curr_y += points_to_mm!(LINE_HEIGHT);
+    curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
@@ -208,7 +208,7 @@ fn create_emergency_xps(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
             DrawingAttributes::TEXT_BOLD,
         );
         page.add_horizontal_divider(curr_y);
-        curr_y += points_to_mm!(LINE_HEIGHT);
+        curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
     }
 
     create_unit_table(ems, page, curr_y);
@@ -328,7 +328,7 @@ where
 {
     page.add_text(label, x, y, DEFAULT_FONT_SIZE, DrawingAttributes::TEXT_BOLD);
     let mut y = y + LINE_HEIGHT;
-    let mut max_len = 0;
+    let mut max_len = label.len() + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label
 
     for value in values {
         page.add_text(

@@ -44,19 +44,19 @@ fn test_parse_emergency() {
         ems.unit_alarm_times[0].unit_id,
         Either::Left("FL BRB 01/16-21".parse::<RadioIdentifier>().unwrap())
     );
-    assert_eq!(ems.unit_alarm_times[0].station, "BRB FW Brandenburg 1ø");
-    assert_eq!(ems.unit_alarm_times[1].alarm_time, "08:21");
+    assert_eq!(ems.unit_alarm_times[0].station, "BRB FW Brandenburg 1");
+    assert_eq!(ems.unit_alarm_times[1].alarm_time, "08:22");
     assert_eq!(
         ems.unit_alarm_times[1].unit_id,
         Either::Left("FL BRB 01/16-21".parse::<RadioIdentifier>().unwrap())
     );
-    assert_eq!(ems.unit_alarm_times[1].station, "BRB FW Brandenburg 1ø");
+    assert_eq!(ems.unit_alarm_times[1].station, "BRB FW Brandenburg 1");
     assert_eq!(ems.unit_alarm_times[2].alarm_time, "08:23");
     assert_eq!(
         ems.unit_alarm_times[2].unit_id,
         Either::Right("RLS BRB DGL 2".to_string())
     );
-    assert_eq!(ems.unit_alarm_times[2].station, "BRB FW Brandenburg 1ø");
+    assert_eq!(ems.unit_alarm_times[2].station, "BRB FW Brandenburg 1");
     assert_eq!(
         ems.alarm_time,
         NaiveDate::from_ymd(2022, 9, 29).and_hms(8, 23, 0)

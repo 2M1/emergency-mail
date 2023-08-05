@@ -26,11 +26,13 @@ const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Info;
 #[cfg(debug_assertions)]
 const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
+/// The pattern used for logging.
+/// @see [https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html](https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html)
+const LOG_PATTERN: &'static str = "{d(%Y-%m-%d %H:%M:%S)} {l}: [{f}:{L}] - {h({m}{n})}";
+
 pub fn init_logging() -> Handle {
     let stdout = ConsoleAppender::builder()
-        .encoder(Box::new(PatternEncoder::new(
-            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
-        )))
+        .encoder(Box::new(PatternEncoder::new(LOG_PATTERN)))
         .build();
 
     let window_roller = FixedWindowRoller::builder()
@@ -42,9 +44,7 @@ pub fn init_logging() -> Handle {
 
     let rolling = RollingFileAppender::builder()
         .append(true)
-        .encoder(Box::new(PatternEncoder::new(
-            "{d(%Y-%m-%d %H:%M:%S)} [{f}:{L}] - {h({m}{n})}",
-        )))
+        .encoder(Box::new(PatternEncoder::new(LOG_PATTERN)))
         .build("logs/emergency_mails.log", Box::new(policy))
         .unwrap();
 

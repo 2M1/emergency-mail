@@ -15,7 +15,7 @@ mod connection;
 mod models;
 mod printing;
 
-const EMERGENCY: &str = include_str!("../examples/emergency_simple.txt");
+const EMERGENCY: &str = include_str!("../examples/emergency_obj.txt");
 
 fn main() {
     logging::init_logging();
