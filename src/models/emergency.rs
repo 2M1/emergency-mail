@@ -53,15 +53,19 @@ impl Emergency {
 
     pub fn address_text(&self) -> String {
         let mut s = String::new();
-        if self.object.is_some() {
-            s.push_str(&self.object.as_ref().unwrap());
-            s.push_str("\n");
-        }
+        // if self.object.is_some() {
+        //     s.push_str(&self.object.as_ref().unwrap());
+        //     s.push_str("\n");
+        // }
         s.push_str(&self.street);
         s.push_str(" ");
         s.push_str(&self.house_number);
         s.push_str("\n");
-        s.push_str(&self.district);
+        s.push_str(&self.town);
+        if self.district != self.town {
+            s.push_str(" / ");
+            s.push_str(&self.district);
+        }
 
         if !self.location.is_empty() && self.location != self.district {
             s.push_str("\n");
@@ -88,5 +92,28 @@ impl Emergency {
         } else {
             return None;
         }
+    }
+
+    pub fn get_obj_description(&self) -> Option<String> {
+        if self.object.is_none() {
+            return None;
+        }
+
+        let mut s = String::new();
+        s.push_str(&self.object.as_ref().unwrap());
+        s.push_str("\n");
+        let mut part = false;
+        if let Some(o) = &self.object_part {
+            part = true;
+            s.push_str(o);
+        }
+        if let Some(o) = &self.object_number {
+            if part {
+                s.push_str(", ");
+            }
+            s.push_str("Nr.: ");
+            s.push_str(&o.to_string());
+        }
+        return Some(s);
     }
 }

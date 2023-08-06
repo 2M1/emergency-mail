@@ -181,6 +181,13 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     curr_y = add_optional_ml_property(
         page,
+        "Objekt:".to_string(),
+        ems.get_obj_description(),
+        curr_y,
+    );
+
+    curr_y = add_optional_ml_property(
+        page,
         "sonst.\nOrtsangaben:".to_string(),
         ems.location_addition.clone(),
         curr_y,
@@ -190,7 +197,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
 
     // TODO: meldender?
 
-    curr_y = add_optional_property(page, "Patient 1:", ems.get_patient_name(), curr_y);
+    curr_y = add_optional_property(page, "Patient:", ems.get_patient_name(), curr_y);
 
     page.add_horizontal_divider(curr_y);
 
@@ -223,7 +230,6 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
         time: 0.0,
     };
     let remaining = create_unit_table(ems, page, curr_y, &mut offsets);
-    println!("remaining: {}", remaining);
 
     if remaining > 0 {
         info!("creating second page");
@@ -311,7 +317,7 @@ fn add_optional_ml_property(
         return y;
     }
     let mut y = y;
-    page.add_multiline_text(
+    let h_label = page.add_multiline_text(
         label,
         LABEL_OFFSET,
         y,
@@ -326,7 +332,7 @@ fn add_optional_ml_property(
         DrawingAttributes::TEXT_BOLD,
     );
 
-    return y + points_to_mm!(LINE_HEIGHT) * 1.2;
+    return y.max(h_label) + 5.0;
 }
 
 fn create_unit_table(
@@ -349,9 +355,7 @@ fn create_unit_table(
     // calculate the number of items that fit on the page (excluding the header: -1):
     let max_items =
         page.max_lines_before_overflow(start_y, DEFAULT_FONT_SIZE, DrawingAttributes::DEFAULT) - 1;
-    println!("max_items: {}", max_items);
     let max_items = min(ems.unit_alarm_times.len(), max_items);
-    println!("after adjustment: {}", max_items);
 
     let page_units = &ems.unit_alarm_times[0..max_items];
 
