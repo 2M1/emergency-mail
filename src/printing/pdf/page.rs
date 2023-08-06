@@ -15,6 +15,7 @@ pub struct PDFPage {
     pub(super) document: Weak<RefCell<PdfDocumentReference>>,
     pub(super) layer: PdfLayerIndex,
     dimensions: (f64, f64),
+    fonts: Vec<IndirectFontRef>,
 }
 
 pub const MARGIN_HORIZONTAL: f64 = 15.0;
@@ -38,6 +39,7 @@ impl PDFPage {
             document: doc,
             layer: layer1,
             dimensions: dimens,
+            fonts: vec![],
         };
 
         let layer = page
@@ -56,10 +58,13 @@ impl PDFPage {
 
     // helpers:
     fn get_font(&mut self, bold: bool) -> IndirectFontRef {
-        let doc = self.document.upgrade().unwrap();
-        let doc = doc.borrow();
-        let font_stream = if bold { FONT_BOLD } else { FONT_MEDIUM };
-        return doc.add_external_font(font_stream).unwrap();
+        if self.fonts.len() != 2 {
+            let doc = self.document.upgrade().unwrap();
+            let doc = doc.borrow();
+            self.fonts.push(doc.add_external_font(FONT_MEDIUM).unwrap());
+            self.fonts.push(doc.add_external_font(FONT_BOLD).unwrap());
+        }
+        return self.fonts[if bold { 1 } else { 0 }].clone();
     }
 }
 
