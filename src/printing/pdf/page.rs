@@ -18,6 +18,7 @@ pub struct PDFPage {
 }
 
 pub const MARGIN_HORIZONTAL: f64 = 15.0;
+pub const MARGIN_VERTICAL: f64 = 1.0;
 /// the height of one line in pts
 /// use the [point_to_mm!()] macro to convert to mm
 pub const LINE_HEIGHT: f32 = 14.0;
@@ -138,12 +139,18 @@ impl PageBuilder for PDFPage {
 
     fn max_lines_before_overflow(
         &self,
-        _y: f32,
+        y: f32,
         _font_size: f32,
         _attrs: DrawingAttributes,
     ) -> usize {
-        // TODO: implement
-        return 0;
+        let height = self.get_dimnensions().1 - MARGIN_VERTICAL as f32;
+        let mut curr_y = y;
+        let mut count = 0;
+        while curr_y + points_to_mm!(LINE_HEIGHT) < height {
+            curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
+            count += 1;
+        }
+        return count;
     }
 
     fn add_multiline_text(

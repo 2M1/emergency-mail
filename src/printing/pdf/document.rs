@@ -52,10 +52,11 @@ impl DocumentBuilder for PDFDocument {
             return Ok(0);
         }
 
-        let (page, layer) =
-            self.document
-                .borrow_mut()
-                .add_page(Mm(A4_WIDTH), Mm(A4_HEIGHT), "Layer 1");
+        let (page, layer) = self.document.borrow_mut().add_page(
+            Mm(A4_WIDTH),
+            Mm(A4_HEIGHT),
+            format!("Page {}, Layer 1", self.pages.len()),
+        );
 
         self.pages.push(PDFPage::new(
             page,
