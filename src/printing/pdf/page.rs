@@ -1,7 +1,9 @@
-use std::{cell::RefCell, rc::Weak};
+use std::{cell::RefCell, io::Cursor, rc::Weak};
 
+use log::info;
 use printpdf::{
-    Color, IndirectFontRef, Line, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
+    image_crate::codecs, Color, Image, ImageTransform, IndirectFontRef, Line, Mm,
+    PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Px, Rgb,
 };
 
 use crate::{
@@ -58,7 +60,7 @@ impl PDFPage {
 
     // helpers:
     fn get_font(&mut self, bold: bool) -> IndirectFontRef {
-        if self.fonts.len() != 2 {
+        if self.fonts.len() < 2 {
             let doc = self.document.upgrade().unwrap();
             let doc = doc.borrow();
             self.fonts.push(doc.add_external_font(FONT_MEDIUM).unwrap());
@@ -205,5 +207,29 @@ impl PageBuilder for PDFPage {
     ) -> bool {
         // TODO: implement
         return true;
+    }
+
+    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize) {
+        let doc = self.document.upgrade().unwrap();
+        let doc = doc.borrow();
+
+        let layer = doc.get_page(self.nr).get_layer(self.layer);
+        let cursor = Cursor::new(content);
+        let mut image = Image::try_from(codecs::bmp::BmpDecoder::new(cursor).unwrap()).unwrap();
+
+        let (width, height) = (width as f64, height as f64);
+        let (original_w, original_h) = (image.image.width.0 as f64, image.image.height.0 as f64);
+
+        image.add_to_layer(
+            layer,
+            ImageTransform {
+                rotate: None,
+                translate_x: Some(Mm(x as f64)),
+                translate_y: Some(Mm(self.dimensions.1 - y as f64)),
+                scale_x: Some(width / original_w),
+                scale_y: Some(height / original_h),
+                ..Default::default()
+            },
+        );
     }
 }

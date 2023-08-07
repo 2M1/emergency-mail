@@ -28,6 +28,7 @@ const LABEL_OFFSET: f32 = 18.0;
 const SECTION_OFFSET: f32 = 15.0;
 const CHAR_WIDTH_40: f32 = 2.5;
 const DEFAULT_FONT_SIZE: f32 = 12.0;
+const LOGO: &[u8] = include_bytes!("../../resources/img/logo-sw.bmp");
 
 struct AlarmTableOffsets {
     // radioId is always = LABEL_OFFSET
@@ -86,6 +87,8 @@ pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
 fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
     // create header blocks
 
+    page.add_img(LOGO, 142.0, 41.5, 200, 200);
+
     page.add_outline_polygon(
         &[
             Point {
@@ -129,6 +132,22 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         DrawingAttributes::DEFAULT,
     );
 
+    page.add_outline_polygon(
+        &[
+            Point { x: 142.0, y: 25.0 },
+            Point { x: 142.0, y: 40.0 },
+            Point {
+                x: page.get_dimnensions().0 - SECTION_OFFSET,
+                y: 40.0,
+            },
+            Point {
+                x: page.get_dimnensions().0 - SECTION_OFFSET,
+                y: 25.0,
+            },
+        ],
+        DrawingAttributes::DEFAULT,
+    );
+
     // create header text labels
 
     page.add_text(
@@ -164,6 +183,14 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
+
+    page.add_multiline_text(
+        "Feuerwehr\nKleinmachnow".to_string(),
+        160.0,
+        32.0,
+        DEFAULT_FONT_SIZE,
+        DrawingAttributes::TEXT_BOLD,
+    );
 }
 
 fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
@@ -194,8 +221,6 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
     );
 
     curr_y = add_optional_property(page, "FWPlan-Nr:", ems.fire_department_plan.clone(), curr_y);
-
-    // TODO: meldender?
 
     curr_y = add_optional_property(page, "Patient:", ems.get_patient_name(), curr_y);
 

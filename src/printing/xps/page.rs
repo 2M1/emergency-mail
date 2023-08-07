@@ -316,4 +316,8 @@ impl PageBuilder for XPSPage {
         ];
         self.add_outline_polygon(&points, DrawingAttributes::DEFAULT);
     }
+
+    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize) {
+        unimplemented!("adding images is not yet supported for xps printing");
+    }
 }

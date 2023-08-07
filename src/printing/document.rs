@@ -118,6 +118,8 @@ pub trait PageBuilder {
     fn max_lines_before_overflow(&self, y: f32, font_size: f32, attrs: DrawingAttributes) -> usize;
 
     fn add_horizontal_divider(&mut self, y: f32);
+
+    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize);
 }
 
 pub trait Printable {
