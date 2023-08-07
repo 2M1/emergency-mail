@@ -26,8 +26,8 @@ pub const MARGIN_VERTICAL: f64 = 20.0;
 /// use the [point_to_mm!()] macro to convert to mm
 pub const LINE_HEIGHT: f32 = 14.0;
 
-const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-Medium.ttf");
-const FONT_BOLD: &'static [u8] = include_bytes!("../../../resources/fonts/OpenSans-ExtraBold.ttf");
+const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/georgia-regular.ttf");
+const FONT_BOLD: &'static [u8] = include_bytes!("../../../resources/fonts/georgia-bold.ttf");
 
 impl PDFPage {
     pub fn new(
