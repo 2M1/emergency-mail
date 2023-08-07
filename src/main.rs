@@ -6,6 +6,8 @@ use config::Config;
 use log::info;
 use log::trace;
 
+use crate::connection::imap::IMAPConnection;
+use crate::connection::message::mail_str_decode_unicode;
 use crate::models::emergency::Emergency;
 use crate::printing::com;
 use crate::printing::print_ems::print_emergency;
@@ -26,22 +28,23 @@ fn main() {
 
     com::init().unwrap();
 
-    let ems = Emergency::from_str(EMERGENCY).unwrap();
-    print_emergency(ems, &config);
     // print_test(doc);
 
-    // let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
-    // trace!("ready! awaiting new mails.");
-    // loop {
-    //     let new_mails = connection.reconnecting_await_new_mail();
-    //     for mail in new_mails {
-    //         if mail.is_none() {
-    //             trace!("mail is none");
-    //             continue;
-    //         }
+    let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
+    trace!("ready! awaiting new mails.");
+    loop {
+        let new_mails = connection.reconnecting_await_new_mail();
+        for mail in new_mails {
+            if mail.is_none() {
+                trace!("mail is none");
+                continue;
+            }
 
-    //         let ems = Emergency::from_str(mail.unwrap().as_str()).unwrap();
-    //         trace!("ems: {:?}", ems);
-    //     }
-    // }
+            let mail_str = mail.unwrap();
+            let mail_str = mail_str_decode_unicode(mail_str);
+            let ems = Emergency::from_str(mail_str.as_str()).unwrap();
+            trace!("ems: {:?}", ems);
+            print_emergency(ems, &config);
+        }
+    }
 }

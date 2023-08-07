@@ -1,0 +1,39 @@
+~~Ort~~Kleinmachnow~~
+~~Ortsteil~~Dreilinden~~
+~~Ortslage~~Zentrum~~
+~~Strasse~~Am Bannwald~~
+~~Hausnummer~~1~~
+~~Objekt~~Feuerwache Kleinmachnow~~
+~~FWPlan~~0101000~~
+~~Objektteil~~Garagen~~
+~~Objektnummer~~20~~
+~~Einsatzart~~Brandeinsatz~~
+~~Alarmgrund~~B:Geb=C3=A4ude-Gro=C3=9F~~
+~~Sondersignal~~mit Sondersignal~~
+~~Einsatznummer~~12341234~~
+~~Besonderheiten~~TestTestTest~~
+~~Name~~S.,A.~~
+~~EMListe~~FL PM 01/59-01, FL PM 01/01-01, FL PM 01/10-01, FL PM 01/11-01, FL PM 01/23-01, FL PM 01/36-01, FL PM 01/42-01, FL PM 01/43-01, FL PM 01/44-01, FL PM 01/65-01, FL PM 01/79-01, FL PM 01/84-01, FL PM 03/33-01, FL PM 03/44-01, RT PM 03/83-01~~
+~~Status~~Tableau-Adresse~~Wache~~Fahrzeug~~Alarmiert~~Ausger=C3=BCckt~~
+~~ALARM~~unbekannt#~~PM AMT Kleinmachnow=C3=98~~FL PM 01/01-01~~00:01~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/10-01~~00:02~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/11-01~~00:03~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/23-01~~00:04~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/36-01~~00:05~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/42-01~~00:06~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/43-01~~00:07~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/44-01~~00:08~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/59-01~~00:09~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/65-01~~00:10~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/79-01~~00:12~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/84-01~~00:11~~~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnow=C3=98~~FL PM 01/85-01~~00:11~~~~
+~~ALARM~~unbekannt#~~PM FW Teltow=C3=98~~FL PM 03/33-01~~00:13~~~~
+~~ALARM~~unbekannt#~~PM FW Teltow=C3=98~~FL PM 03/44-01~~00:14~~~~
+~~ALARM~~unbekannt#~~PM RW Teltow=C3=98~~RT PM 03/83-01~~00:15~~~~
+~~WGS84_X~~52.0~~
+~~WGS84_Y~~13.0~~
+~~Koord_EPSG_25833~~13.0~~52.0~~
+~~Koord_EPSG_4326~~E00~~N00~~
+~~Einsatzortzusatz~~Hydrant DN5000 100km s=C3=BCdlich~~
+~~Alarmzeit~~06.08.23&00:00~~
