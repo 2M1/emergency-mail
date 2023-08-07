@@ -38,7 +38,7 @@ struct AlarmTableOffsets {
 
 pub fn print_emergency(ems: Emergency, config: &Config) {
     let mut doc = PDFDocument::new();
-    create_emergency_doc(&ems, &mut doc);
+    create_emergency_doc(&ems, &mut doc, config);
     let mut temp_dir = std::env::temp_dir();
     temp_dir.push(Path::new("emergency_mail\\"));
 
@@ -65,7 +65,7 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
     printer.print(count_copies(&ems, config), config);
 }
 
-pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
+pub(super) fn count_units_from_configured_amt(ems: &Emergency, config: &Config) -> usize {
     let mut count = 0;
     for unit in &ems.dispatched_units {
         let Either::Left(unit) = unit else { continue };
@@ -76,6 +76,11 @@ pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
             count += 1;
         }
     }
+    return count;
+}
+
+pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
+    let mut count = count_units_from_configured_amt(ems, config);
     println!("unit copies: {}", count);
     if let Some(additional_copies) = config.printing.additional_copies {
         count += additional_copies as usize;
@@ -198,7 +203,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
     );
 }
 
-fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
+fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: &Config) {
     let page_id = doc.new_page().unwrap();
     let page = doc.page_at(page_id).unwrap();
 
@@ -259,16 +264,23 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
         station: 0.0,
         time: 0.0,
     };
-    let remaining = create_unit_table(ems, page, curr_y, &mut offsets);
+    let home_count = count_units_from_configured_amt(ems, config);
+    println!("homecount: {}", home_count);
+    let remaining = create_unit_table(ems, page, curr_y, &mut offsets, home_count);
+    let printed = ems.unit_alarm_times.len() - remaining;
 
     if remaining > 0 {
         info!("creating second page");
         let page_id = doc.new_page().unwrap();
         let page = doc.page_at(page_id).unwrap();
         let curr_y = 25.0;
-
         // assumes that all remaining units fit on one page :):
         let page_units = &ems.unit_alarm_times[ems.unit_alarm_times.len() - remaining..];
+        let remaining_home_count = if home_count > printed {
+            home_count - printed
+        } else {
+            0
+        };
 
         // create column 1 (radio id):
         add_column(
@@ -280,6 +292,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
             page,
             LABEL_OFFSET,
             curr_y,
+            remaining_home_count,
         );
 
         // create column 2 (wache):
@@ -289,6 +302,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
             page,
             offsets.station,
             curr_y,
+            remaining_home_count,
         );
 
         // create column 3 (alarm time):
@@ -298,6 +312,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder) {
             page,
             offsets.time,
             curr_y,
+            remaining_home_count,
         );
     }
 }
@@ -370,6 +385,7 @@ fn create_unit_table(
     page: &mut dyn PageBuilder,
     start_y: f32,
     offsets: &mut AlarmTableOffsets,
+    home_count: usize,
 ) -> usize {
     let mut start_y = start_y;
     // create header:
@@ -399,6 +415,7 @@ fn create_unit_table(
             Either::Left(id) => id.to_string(),
             Either::Right(id) => id.clone(),
         }),
+        home_count,
     );
     offsets.station = CHAR_WIDTH_40 * max_len as f32 + LABEL_OFFSET + 8.0;
 
@@ -409,6 +426,7 @@ fn create_unit_table(
         offsets.station,
         start_y,
         page_units.iter().map(|u| u.station.clone()),
+        home_count,
     );
     offsets.time = offsets.station + CHAR_WIDTH_40 * max_len as f32 + 8.0;
 
@@ -419,6 +437,7 @@ fn create_unit_table(
         offsets.time,
         start_y,
         page_units.iter().map(|u| u.alarm_time.clone()),
+        home_count,
     );
 
     return max(0, ems.unit_alarm_times.len() - max_items);
@@ -430,6 +449,7 @@ fn add_start_column<I>(
     x_offset: f32,
     start_y: f32,
     page_units: I,
+    bold_count: usize,
 ) -> usize
 where
     I: Iterator<Item = String>,
@@ -441,7 +461,7 @@ where
         DEFAULT_FONT_SIZE,
         DrawingAttributes::TEXT_BOLD,
     );
-    return add_column(label.len(), page_units, page, x_offset, start_y);
+    return add_column(label.len(), page_units, page, x_offset, start_y, bold_count);
 }
 
 fn add_column<'a, I>(
@@ -450,12 +470,14 @@ fn add_column<'a, I>(
     page: &mut dyn PageBuilder,
     x: f32,
     y: f32,
+    bold_count: usize,
 ) -> usize
 where
     I: Iterator<Item = String>,
 {
     let mut y = y + points_to_mm!(LINE_HEIGHT) * 1.5;
     let mut max_len = label_len + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label
+    let mut bold_remaining = bold_count;
 
     for value in values {
         page.add_text(
@@ -463,7 +485,12 @@ where
             x,
             y,
             DEFAULT_FONT_SIZE,
-            DrawingAttributes::DEFAULT,
+            if bold_remaining > 0 {
+                bold_remaining -= 1;
+                DrawingAttributes::TEXT_BOLD
+            } else {
+                DrawingAttributes::DEFAULT
+            },
         );
         max_len = max(max_len, value.len());
         y += points_to_mm!(LINE_HEIGHT) * 1.5;
