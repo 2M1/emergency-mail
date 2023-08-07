@@ -27,10 +27,12 @@ fn test_count_copies_none() {
     env::set_var("EM_IMAP_USERNAME", "user");
     env::set_var("EM_IMAP_PASSWORD", "pass");
 
-    let config_full = Config::parse("examples/config_full.yaml").unwrap(); // min_copies = 1, max_copies = 5
+    let mut config_full = Config::parse("examples/config_full.yaml").unwrap(); // min_copies = 1, max_copies = 5
+    config_full.printing.additional_copies = Some(2);
+    config_full.printing.min_copies = 0;
     let config_min = Config::parse("examples/config.yaml").unwrap(); // min_copies = 1, max_copies = None
     let ems = Emergency::from_str(EMS_NONE).unwrap();
-    assert_eq!(count_copies(&ems, &config_full), 2); // min_copies = 1
+    assert_eq!(count_copies(&ems, &config_full), 2); // min_copies = 0, no units alarmed, plus 2 additional copies
     assert_eq!(count_copies(&ems, &config_min), 1);
 }
 

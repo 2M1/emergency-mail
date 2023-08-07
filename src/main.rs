@@ -29,7 +29,13 @@ fn main() {
     com::init().unwrap();
 
     // print_test(doc);
-
+    // let ems = Emergency::from_str(EMERGENCY).unwrap();
+    // print_emergency(ems, &config);
+    let ems = include_str!("../examples/emergency_bgebg_asciiescaped.txt");
+    let ems = mail_str_decode_unicode(ems.to_string());
+    println!("{}", ems);
+    let ems = Emergency::from_str(ems.as_str()).unwrap();
+    print_emergency(ems, &config);
     let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
     trace!("ready! awaiting new mails.");
     loop {

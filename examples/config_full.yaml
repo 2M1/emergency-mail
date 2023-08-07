@@ -7,6 +7,8 @@ interval: 25 # in minutes
 printing:
   min_copies: 2 # minimum number of duplicate copies to be printed
   max_copies: 5 # maximum number of duplicate copies to be printed
+  additional_copies: 1 # number of copies to be added to the number of alarmed units within the amt. 
+  # setting this will not override the max_copies setting (i.e. if max_copies is 5 and additional_copies is 2, the maximum number of copies will still be 5)
   printer: "HP_LaserJet_500_Pro" # "HP_LaserJet_400_M401dn" # printer name // TODO: add instructions on how to get the printer name
   amt: 1 # AMT number (Funkkenner, ohne führende 0)
   sumatra_path: "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe" # path to SumatraPDF

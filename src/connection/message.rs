@@ -66,16 +66,16 @@ pub fn mail_str_decode_unicode(str: String) -> String {
         if prev_buffer.len() == 6 {
             let hex_1 = &prev_buffer[1..3];
             let hex_2 = &prev_buffer[4..6];
-            let utf8 = [
-                u8::from_str_radix(&hex_1, 16).unwrap(),
-                u8::from_str_radix(&hex_2, 16).unwrap(),
-            ];
-            let utf8 = String::from_utf8(utf8.to_vec()).unwrap();
-            new_str.push_str(&utf8);
+            let hex_1 = u8::from_str_radix(&hex_1, 16).unwrap();
+            let hex_2 = u8::from_str_radix(&hex_2, 16).unwrap();
+            let utf8 = String::from_utf8([hex_1, hex_2].to_vec()).unwrap();
+
+            // if let Some(comound) = char::from_u32(utf8) {
+            new_str.push_str(utf8.as_str());
+            // }
             prev_buffer.clear();
         }
     }
-
     return new_str;
 }
 

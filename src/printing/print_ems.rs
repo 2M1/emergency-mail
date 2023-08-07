@@ -76,11 +76,16 @@ pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
             count += 1;
         }
     }
-
+    println!("unit copies: {}", count);
+    if let Some(additional_copies) = config.printing.additional_copies {
+        count += additional_copies as usize;
+    }
+    println!("with additional copies: {}", count);
     count = max(count, config.printing.min_copies as usize);
     if let Some(max_copies) = config.printing.max_copies {
         count = min(count, max_copies as usize);
     }
+    println!("corrected for interval: {}", count);
     return count;
 }
 

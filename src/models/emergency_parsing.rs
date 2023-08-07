@@ -385,7 +385,9 @@ fn parse_alarm_table_entry(
         skip_line(in_stream, line_nr);
         return;
     }
-    entries[headers.station] = entries[headers.station].replace("ø", "");
+    entries[headers.station] = entries[headers.station]
+        .trim_end_matches(|c: char| !c.is_ascii())
+        .to_string();
 
     let id_str = vec_remove_replace(&mut entries, headers.unit);
     let id = RadioIdentifier::from_str(&id_str);

@@ -32,6 +32,7 @@ fn test_parse_file() {
     assert_eq!(config.interval, 25);
     assert_eq!(config.printing.min_copies, 2);
     assert_eq!(config.printing.max_copies, Some(5));
+    assert_eq!(config.printing.additional_copies, Some(1));
     assert_eq!(
         config.printing.printer,
         Some("HP_LaserJet_500_Pro".to_string())
@@ -66,6 +67,7 @@ fn test_parse_file_minmal_config() {
         config.printing.sumatra_path,
         "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe".to_string()
     );
+    assert_eq!(config.printing.additional_copies, None);
 
     env::remove_var("EM_IMAP_HOST");
     env::remove_var("EM_IMAP_USERNAME");
