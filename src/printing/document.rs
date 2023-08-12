@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::{Display, Formatter},
+    fmt::{Debug, Display, Formatter},
     path::Path,
 };
 
@@ -12,10 +12,22 @@ pub struct Point {
     pub y: f32,
 }
 
+#[derive(Clone, Copy)]
+pub union Size {
+    pub line_thickness: f32,
+    pub font_size: f32,
+}
+
+impl Debug for Size {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe { write!(f, "{}", self.line_thickness) } // both are the same size, so it doesn't matter which one we use
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct DrawingAttributes {
     pub text_bold: bool,
-    pub line_thickness: f32,
+    pub size: Size,
 }
 
 #[derive(Debug)]
@@ -59,13 +71,17 @@ impl Error for DocumentBuildingError {
 
 impl DrawingAttributes {
     pub const TEXT_BOLD: Self = Self {
-        text_bold: true,
-        line_thickness: 1.0,
+        text_bold: false,
+        size: Size {
+            line_thickness: 1.0,
+        },
     };
 
     pub const DEFAULT: Self = Self {
-        text_bold: false,
-        line_thickness: 1.0,
+        text_bold: true,
+        size: Size {
+            line_thickness: 1.0,
+        },
     };
 }
 
@@ -79,14 +95,7 @@ pub trait PageBuilder {
     fn get_dimnensions(&self) -> (f32, f32);
 
     fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes);
-    fn add_text(
-        &mut self,
-        text: &str,
-        x: f32,
-        y: f32,
-        font_size: f32,
-        attributes: DrawingAttributes,
-    );
+    fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes);
 
     /// Adds a text block, that may include linebreaks (\r) by splitting the text into multiple lines.
     ///
@@ -98,24 +107,17 @@ pub trait PageBuilder {
         text: String,
         x: f32,
         y: f32,
-        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32;
 
     /// Checks whether the given number of lines will overflow the page.
     ///
     /// NOTE: should be checked before calling [add_multiline_text()] to prevent overflow.
-    fn will_multiline_overflow(
-        &self,
-        line_count: usize,
-        y: f32,
-        font_size: f32,
-        attrs: DrawingAttributes,
-    ) -> bool;
+    fn will_multiline_overflow(&self, line_count: usize, y: f32, attrs: DrawingAttributes) -> bool;
 
     /// Returns the number of lines, that can be added to the page before it overflows (given the configuration).
     /// see [will_multiline_overflow] for more information.
-    fn max_lines_before_overflow(&self, y: f32, font_size: f32, attrs: DrawingAttributes) -> usize;
+    fn max_lines_before_overflow(&self, y: f32, attrs: DrawingAttributes) -> usize;
 
     fn add_horizontal_divider(&mut self, y: f32);
 

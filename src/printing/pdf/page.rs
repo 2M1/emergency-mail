@@ -7,8 +7,9 @@ use printpdf::{
 };
 
 use crate::{
-    points_to_mm,
+    font_size, line_thickness, points_to_mm,
     printing::document::{DrawingAttributes, PageBuilder, Point},
+    text_line_height,
 };
 
 #[derive(Clone)]
@@ -24,7 +25,6 @@ pub const MARGIN_HORIZONTAL: f64 = 15.0;
 pub const MARGIN_VERTICAL: f64 = 20.0;
 /// the height of one line in pts
 /// use the [point_to_mm!()] macro to convert to mm
-pub const LINE_HEIGHT: f32 = 14.0;
 
 const FONT_MEDIUM: &'static [u8] = include_bytes!("../../../resources/fonts/PTSerif-Regular.ttf");
 const FONT_BOLD: &'static [u8] = include_bytes!("../../../resources/fonts/PTSerif-Bold.ttf");
@@ -117,18 +117,11 @@ impl PageBuilder for PDFPage {
             .get_page(self.nr)
             .get_layer(self.layer);
 
-        layer.set_outline_thickness(attributes.line_thickness as f64);
+        layer.set_outline_thickness(line_thickness!(attributes) as f64);
         layer.add_shape(line);
     }
 
-    fn add_text(
-        &mut self,
-        text: &str,
-        x: f32,
-        y: f32,
-        font_size: f32,
-        attributes: DrawingAttributes,
-    ) {
+    fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes) {
         let doc = self.document.upgrade().unwrap();
         let doc = doc.borrow();
 
@@ -137,24 +130,19 @@ impl PageBuilder for PDFPage {
 
         layer.use_text(
             text,
-            font_size as f64,
+            font_size!(attributes) as f64,
             Mm(x as f64),
             Mm(self.dimensions.1 - y as f64),
             &font,
         );
     }
 
-    fn max_lines_before_overflow(
-        &self,
-        y: f32,
-        _font_size: f32,
-        _attrs: DrawingAttributes,
-    ) -> usize {
+    fn max_lines_before_overflow(&self, y: f32, attrs: DrawingAttributes) -> usize {
         let height = self.get_dimnensions().1 - MARGIN_VERTICAL as f32;
         let mut curr_y = y;
         let mut count = 0;
-        while curr_y + points_to_mm!(LINE_HEIGHT) < height {
-            curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
+        while curr_y + points_to_mm!(text_line_height!(attrs)) < height {
+            curr_y += points_to_mm!(text_line_height!(attrs)) * 1.5;
             count += 1;
         }
         return count;
@@ -165,7 +153,6 @@ impl PageBuilder for PDFPage {
         text: String,
         x: f32,
         y: f32,
-        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32 {
         let layer = self
@@ -180,7 +167,7 @@ impl PageBuilder for PDFPage {
 
         layer.begin_text_section();
 
-        let font_size = font_size as f64;
+        let font_size = font_size!(attributes) as f64;
         layer.set_font(&font, font_size);
         layer.set_text_cursor(Mm(x as f64), Mm(self.dimensions.1 - y as f64));
         layer.set_line_height(font_size + 1.0);
@@ -190,7 +177,7 @@ impl PageBuilder for PDFPage {
         for line in lines {
             layer.write_text(line, &font);
             layer.add_line_break();
-            curr_y += points_to_mm!(LINE_HEIGHT);
+            curr_y += points_to_mm!(text_line_height!(attributes));
         }
 
         layer.end_text_section();
@@ -202,7 +189,6 @@ impl PageBuilder for PDFPage {
         &self,
         _line_count: usize,
         _y: f32,
-        _font_size: f32,
         _attrs: DrawingAttributes,
     ) -> bool {
         // TODO: implement

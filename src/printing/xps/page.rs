@@ -12,7 +12,10 @@ use windows::{
     },
 };
 
-use crate::printing::document::{DrawingAttributes, PageBuilder, Point};
+use crate::{
+    font_size,
+    printing::document::{DrawingAttributes, PageBuilder, Point},
+};
 
 use super::helper::XPSHelper;
 
@@ -82,12 +85,7 @@ impl PageBuilder for XPSPage {
         return (self.size.width / 10.0, self.size.height / 10.0);
     }
 
-    fn max_lines_before_overflow(
-        &self,
-        y: f32,
-        _font_size: f32,
-        _attrs: DrawingAttributes,
-    ) -> usize {
+    fn max_lines_before_overflow(&self, y: f32, _attrs: DrawingAttributes) -> usize {
         let y = y * COORDINATE_MUKTIPLIER;
 
         let mut curr_y = y;
@@ -103,7 +101,6 @@ impl PageBuilder for XPSPage {
         &self,
         line_count: usize,
         y: f32,
-        _font_size: f32,
         _attrs: DrawingAttributes,
     ) -> bool {
         let y = y * COORDINATE_MUKTIPLIER;
@@ -115,7 +112,7 @@ impl PageBuilder for XPSPage {
         return self.should_wrap(curr_y);
     }
 
-    fn add_text(&mut self, text: &str, x: f32, y: f32, size: f32, attributes: DrawingAttributes) {
+    fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes) {
         let x = x * COORDINATE_MUKTIPLIER;
         let y = y * COORDINATE_MUKTIPLIER;
 
@@ -132,7 +129,13 @@ impl PageBuilder for XPSPage {
             return;
         };
 
-        let glyphs = self._get_glyph_run(Arc::clone(&self.font).as_ref(), x, y, size, brush);
+        let glyphs = self._get_glyph_run(
+            Arc::clone(&self.font).as_ref(),
+            x,
+            y,
+            font_size!(attributes),
+            brush,
+        );
         let Ok(glyphs) = glyphs else {
             error!("couldn't create glyphs run: {:?}", glyphs.unwrap_err());
             return;
@@ -253,7 +256,10 @@ impl PageBuilder for XPSPage {
             return;
         };
 
-        unsafe { path.SetStrokeThickness(attributes.line_thickness).unwrap() };
+        unsafe {
+            path.SetStrokeThickness(attributes.size.line_thickness)
+                .unwrap()
+        };
         let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0).unwrap();
         let brush_res = unsafe { path.SetStrokeBrushLocal(&brush) };
         let Ok(_) = brush_res else {
@@ -276,7 +282,6 @@ impl PageBuilder for XPSPage {
         text: String,
         x: f32,
         start_y: f32,
-        font_size: f32,
         attributes: DrawingAttributes,
     ) -> f32 {
         let x = x * COORDINATE_MUKTIPLIER;
@@ -291,7 +296,7 @@ impl PageBuilder for XPSPage {
 
         let mut curr_y = start_y;
         for line in lines {
-            self.add_text(line, x / 10.0, curr_y / 10.0, font_size, attributes);
+            self.add_text(line, x / 10.0, curr_y / 10.0, attributes);
             curr_y += LINE_HEIGHT;
         }
 

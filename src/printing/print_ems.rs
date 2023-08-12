@@ -17,12 +17,40 @@ use crate::{
         document::{DocumentBuildingError, Printable},
         pdf::{document::PDFDocument, print_pdf::PDFFilePrinter},
     },
+    text_line_height,
 };
 
-use super::{
-    document::{DocumentBuilder, DrawingAttributes, PageBuilder, Point},
-    pdf::page::LINE_HEIGHT,
-};
+use super::document::{DocumentBuilder, DrawingAttributes, PageBuilder, Point, Size};
+
+impl DrawingAttributes {
+    pub const OUTLINE_POLY: Self = Self {
+        text_bold: false,
+        size: Size {
+            line_thickness: 1.0,
+        },
+    };
+
+    pub const LABEL: Self = Self {
+        text_bold: true,
+        size: Size {
+            font_size: DEFAULT_FONT_SIZE,
+        },
+    };
+
+    pub const FIELD_VALUE: Self = Self {
+        text_bold: false,
+        size: Size {
+            font_size: DEFAULT_FONT_SIZE,
+        },
+    };
+
+    pub const HIGHLIGHTED_ENTRY: Self = Self {
+        text_bold: true,
+        size: Size {
+            font_size: DEFAULT_FONT_SIZE,
+        },
+    };
+}
 
 const LABEL_OFFSET: f32 = 18.0;
 const SECTION_OFFSET: f32 = 15.0;
@@ -112,7 +140,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
             Point { x: 50.0, y: 40.0 },
             Point { x: 50.0, y: 25.0 },
         ],
-        DrawingAttributes::DEFAULT,
+        DrawingAttributes::OUTLINE_POLY,
     );
     page.add_outline_polygon(
         &[
@@ -121,7 +149,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
             Point { x: 78.0, y: 40.0 },
             Point { x: 78.0, y: 25.0 },
         ],
-        DrawingAttributes::DEFAULT,
+        DrawingAttributes::OUTLINE_POLY,
     );
     page.add_outline_polygon(
         &[
@@ -130,7 +158,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
             Point { x: 103.0, y: 40.0 },
             Point { x: 103.0, y: 25.0 },
         ],
-        DrawingAttributes::DEFAULT,
+        DrawingAttributes::OUTLINE_POLY,
     );
     page.add_outline_polygon(
         &[
@@ -139,7 +167,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
             Point { x: 142.0, y: 40.0 },
             Point { x: 142.0, y: 25.0 },
         ],
-        DrawingAttributes::DEFAULT,
+        DrawingAttributes::OUTLINE_POLY,
     );
 
     page.add_outline_polygon(
@@ -155,25 +183,13 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
                 y: 25.0,
             },
         ],
-        DrawingAttributes::DEFAULT,
+        DrawingAttributes::OUTLINE_POLY,
     );
 
     // create header text labels
 
-    page.add_text(
-        "Einsatznummer:",
-        16.0,
-        34.0,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::DEFAULT,
-    );
-    page.add_text(
-        "Alarmzeit:",
-        81.0,
-        34.0,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::DEFAULT,
-    );
+    page.add_text("Einsatznummer:", 16.0, 34.0, DrawingAttributes::LABEL);
+    page.add_text("Alarmzeit:", 80.0, 34.0, DrawingAttributes::LABEL);
 
     // add values:
 
@@ -181,25 +197,17 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         ems.emergency_number.to_string().as_str(),
         52.0,
         34.0,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
+        DrawingAttributes::FIELD_VALUE,
     );
 
     let time_str = ems.alarm_time.format("%d.%m.%y\n%H:%M").to_string(); // NOTE: seconds are not transmitted in the mail
-    page.add_multiline_text(
-        time_str,
-        106.0,
-        32.0,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
-    );
+    page.add_multiline_text(time_str, 106.0, 32.0, DrawingAttributes::FIELD_VALUE);
 
     page.add_multiline_text(
         "Feuerwehr\nKleinmachnow".to_string(),
         160.0,
         32.0,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
+        DrawingAttributes::LABEL,
     );
 }
 
@@ -236,28 +244,17 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: 
 
     page.add_horizontal_divider(curr_y);
 
-    curr_y += points_to_mm!(LINE_HEIGHT) * 1.2;
+    curr_y += points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.2;
 
     if let Some(note) = ems.note.clone() {
         if !note.is_empty() {
-            page.add_text(
-                "Hinweise",
-                15.0,
-                curr_y,
-                DEFAULT_FONT_SIZE,
-                DrawingAttributes::TEXT_BOLD,
-            );
+            page.add_text("Hinweise", 15.0, curr_y, DrawingAttributes::LABEL);
         }
-        curr_y += points_to_mm!(LINE_HEIGHT) * 1.5;
-        curr_y = page.add_multiline_text(
-            note,
-            LABEL_OFFSET,
-            curr_y,
-            DEFAULT_FONT_SIZE,
-            DrawingAttributes::TEXT_BOLD,
-        );
+        curr_y += points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
+        curr_y =
+            page.add_multiline_text(note, LABEL_OFFSET, curr_y, DrawingAttributes::FIELD_VALUE);
         page.add_horizontal_divider(curr_y);
-        curr_y += points_to_mm!(LINE_HEIGHT) * 1.2;
+        curr_y += points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.2;
     }
 
     let mut offsets = AlarmTableOffsets {
@@ -330,22 +327,10 @@ fn add_optional_property(
         return y;
     }
     let mut y = y;
-    page.add_text(
-        label,
-        LABEL_OFFSET,
-        y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::DEFAULT,
-    );
-    y = page.add_multiline_text(
-        property,
-        50.0,
-        y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
-    );
+    page.add_text(label, LABEL_OFFSET, y, DrawingAttributes::LABEL);
+    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::FIELD_VALUE);
 
-    return y + points_to_mm!(LINE_HEIGHT) * 1.2;
+    return y + points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.2;
 }
 
 fn add_optional_ml_property(
@@ -362,20 +347,8 @@ fn add_optional_ml_property(
         return y;
     }
     let mut y = y;
-    let h_label = page.add_multiline_text(
-        label,
-        LABEL_OFFSET,
-        y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::DEFAULT,
-    );
-    y = page.add_multiline_text(
-        property,
-        50.0,
-        y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
-    );
+    let h_label = page.add_multiline_text(label, LABEL_OFFSET, y, DrawingAttributes::LABEL);
+    y = page.add_multiline_text(property, 50.0, y, DrawingAttributes::FIELD_VALUE);
 
     return y.max(h_label) + 5.0;
 }
@@ -389,18 +362,11 @@ fn create_unit_table(
 ) -> usize {
     let mut start_y = start_y;
     // create header:
-    page.add_text(
-        "Alarmierungen",
-        15.0,
-        start_y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
-    );
-    start_y += points_to_mm!(LINE_HEIGHT) * 2.0;
+    page.add_text("Alarmierungen", 15.0, start_y, DrawingAttributes::LABEL);
+    start_y += points_to_mm!(text_line_height!(DrawingAttributes::LABEL)) * 2.0;
 
     // calculate the number of items that fit on the page (excluding the header: -1):
-    let max_items =
-        page.max_lines_before_overflow(start_y, DEFAULT_FONT_SIZE, DrawingAttributes::DEFAULT) - 1;
+    let max_items = page.max_lines_before_overflow(start_y, DrawingAttributes::DEFAULT) - 1;
     let max_items = min(ems.unit_alarm_times.len(), max_items);
 
     let page_units = &ems.unit_alarm_times[0..max_items];
@@ -454,13 +420,7 @@ fn add_start_column<I>(
 where
     I: Iterator<Item = String>,
 {
-    page.add_text(
-        label,
-        x_offset,
-        start_y,
-        DEFAULT_FONT_SIZE,
-        DrawingAttributes::TEXT_BOLD,
-    );
+    page.add_text(label, x_offset, start_y, DrawingAttributes::LABEL);
     return add_column(label.len(), page_units, page, x_offset, start_y, bold_count);
 }
 
@@ -475,7 +435,7 @@ fn add_column<'a, I>(
 where
     I: Iterator<Item = String>,
 {
-    let mut y = y + points_to_mm!(LINE_HEIGHT) * 1.5;
+    let mut y = y + points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
     let mut max_len = label_len + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label
     let mut bold_remaining = bold_count;
 
@@ -484,16 +444,15 @@ where
             &value.as_str(),
             x,
             y,
-            DEFAULT_FONT_SIZE,
             if bold_remaining > 0 {
                 bold_remaining -= 1;
-                DrawingAttributes::TEXT_BOLD
+                DrawingAttributes::HIGHLIGHTED_ENTRY
             } else {
-                DrawingAttributes::DEFAULT
+                DrawingAttributes::FIELD_VALUE
             },
         );
         max_len = max(max_len, value.len());
-        y += points_to_mm!(LINE_HEIGHT) * 1.5;
+        y += points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
     }
     max_len
 }
