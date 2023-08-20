@@ -20,7 +20,7 @@ version = "0.5.3"
 features = ["embedded_images"]
 
 [dependencies.windows]
-version = "0.48"
+version = "0.51"
 features = [
     "Data_Xml_Dom",
     "Win32_System_Com",
