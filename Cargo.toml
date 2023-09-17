@@ -16,7 +16,7 @@ log4rs = "1.2.0"
 no-panic = "0.1"
 
 [dependencies.printpdf]
-version = "0.5.3"
+version = "0.6.0"
 features = ["embedded_images"]
 
 [dependencies.windows]
