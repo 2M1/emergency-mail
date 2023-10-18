@@ -13,15 +13,15 @@ pub struct PDFDocument {
     first: bool,
 }
 
-const A4_WIDTH: f64 = 210.0;
-const A4_HEIGHT: f64 = 297.0;
+const A4_WIDTH: f32 = 210.0;
+const A4_HEIGHT: f32 = 297.0;
 
 impl PDFDocument {
     pub fn new() -> Self {
         let (document, p1, l1) = PdfDocument::new(
             "printpdf paginated example",
-            Mm(A4_WIDTH),
-            Mm(A4_HEIGHT),
+            Mm(A4_WIDTH.into()),
+            Mm(A4_HEIGHT.into()),
             "Layer 1",
         );
 
@@ -33,7 +33,7 @@ impl PDFDocument {
                 p1,
                 Rc::downgrade(&document),
                 l1,
-                (A4_WIDTH, A4_HEIGHT),
+                (A4_WIDTH.into(), A4_HEIGHT.into()),
             )],
             first: true,
         }
@@ -53,8 +53,8 @@ impl DocumentBuilder for PDFDocument {
         }
 
         let (page, layer) = self.document.borrow_mut().add_page(
-            Mm(A4_WIDTH),
-            Mm(A4_HEIGHT),
+            Mm(A4_WIDTH.into()),
+            Mm(A4_HEIGHT.into()),
             format!("Page {}, Layer 1", self.pages.len()),
         );
 
@@ -62,7 +62,7 @@ impl DocumentBuilder for PDFDocument {
             page,
             Rc::downgrade(&self.document),
             layer,
-            (A4_WIDTH, A4_HEIGHT),
+            (A4_WIDTH.into(), A4_HEIGHT.into()),
         ));
 
         return Ok(self.pages.len() - 1);

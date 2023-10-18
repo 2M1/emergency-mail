@@ -34,23 +34,22 @@ fn main() {
     let ems = include_str!("../examples/emergency_r1n1f.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
     println!("{}", ems);
-    let ems = Emergency::from_str(ems.as_str()).unwrap();
-    print_emergency(ems, &config);
-    // let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
-    // trace!("ready! awaiting new mails.");
-    // loop {
-    //     let new_mails = connection.reconnecting_await_new_mail();
-    //     for mail in new_mails {
-    //         if mail.is_none() {
-    //             trace!("mail is none");
-    //             continue;
-    //         }
 
-    //         let mail_str = mail.unwrap();
-    //         let mail_str = mail_str_decode_unicode(mail_str);
-    //         let ems = Emergency::from_str(mail_str.as_str()).unwrap();
-    //         trace!("ems: {:?}", ems);
-    //         print_emergency(ems, &config);
-    //     }
-    // }
+    let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
+    trace!("ready! awaiting new mails.");
+    loop {
+        let new_mails = connection.reconnecting_await_new_mail();
+        for mail in new_mails {
+            if mail.is_none() {
+                trace!("mail is none");
+                continue;
+            }
+
+            let mail_str = mail.unwrap();
+            let mail_str = mail_str_decode_unicode(mail_str);
+            let ems = Emergency::from_str(mail_str.as_str()).unwrap();
+            trace!("ems: {:?}", ems);
+            print_emergency(ems, &config);
+        }
+    }
 }

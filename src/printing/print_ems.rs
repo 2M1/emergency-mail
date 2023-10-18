@@ -75,10 +75,12 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
         error!("couldn't create temp dir: {}", e);
         return;
     }
+
     temp_dir.push("output.pdf");
     if cfg!(debug_assertions) {
         temp_dir = Path::new("test.pdf").to_path_buf();
     }
+
     trace!("saving to: {:?}", temp_dir);
     let docref = doc.document;
     let docref = Rc::try_unwrap(docref)
