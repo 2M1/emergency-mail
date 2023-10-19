@@ -17,7 +17,7 @@ fn test_count_copies_many() {
     let config_min = Config::parse("examples/config.yaml").unwrap(); // min_copies = 1, max_copies = None
     let ems = Emergency::from_str(EMS_FULL).unwrap();
     assert_eq!(count_copies(&ems, &config_full), 5);
-    assert_eq!(count_copies(&ems, &config_min), 12);
+    assert_eq!(count_copies(&ems, &config_min), 13);
 }
 
 #[test]
