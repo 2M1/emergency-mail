@@ -14,3 +14,7 @@ Work in progress.
 ## possible futures:
 - [ ] add gui for status and reprint of last n Ems
 - [ ] add config generation to gui
+
+## on server
+- ubuntu 22.04
+  - usb stick (silver) ist registriert, löschen und evtl. formatieren, so dass er wieder geht :)
