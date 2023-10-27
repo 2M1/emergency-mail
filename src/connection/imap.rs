@@ -1,6 +1,9 @@
 use std::{cmp::max, net::TcpStream, time::Duration};
 
-use imap::{types::{Mailbox, UnsolicitedResponse}, Session, ImapConnection};
+use imap::{
+    types::{Mailbox, UnsolicitedResponse},
+    ImapConnection, Session,
+};
 
 use log::{error, info, trace, warn};
 use native_tls::TlsStream;
@@ -20,7 +23,7 @@ pub enum IMAPIdleError {
 
 /// Represents a connection to an IMAP server.
 pub struct IMAPConnection {
-    session:Session<Box<dyn ImapConnection>>,
+    session: Session<Box<dyn ImapConnection>>,
     inbox: Mailbox,
     idle_interval: Duration,
 }
