@@ -200,7 +200,7 @@ impl PageBuilder for PDFPage {
 
         let layer = doc.get_page(self.nr).get_layer(self.layer);
         let cursor = Cursor::new(content);
-        let mut image = Image::try_from(codecs::bmp::BmpDecoder::new(cursor).unwrap()).unwrap();
+        let image = Image::try_from(codecs::bmp::BmpDecoder::new(cursor).unwrap()).unwrap();
 
         let (width, height) = (width as f64, height as f64);
         let (original_w, original_h) = (image.image.width.0 as f64, image.image.height.0 as f64);

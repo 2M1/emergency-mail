@@ -6,12 +6,12 @@ use std::{
     rc::Rc,
 };
 
-use chrono::Offset;
+
 use log::{error, info, trace};
 
 use crate::{
     config::Config,
-    models::{either::Either, emergency::Emergency, unit_alarm_time::UnitAlarmTime},
+    models::{either::Either, emergency::Emergency},
     points_to_mm,
     printing::{
         document::{DocumentBuildingError, Printable},
