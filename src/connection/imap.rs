@@ -1,9 +1,6 @@
 use std::{cmp::max, net::TcpStream, time::Duration};
 
-use imap::{
-    types::{Mailbox, UnsolicitedResponse},
-    Session,
-};
+use imap::{types::{Mailbox, UnsolicitedResponse}, Session, ImapConnection};
 
 use log::{error, info, trace, warn};
 use native_tls::TlsStream;
@@ -23,7 +20,7 @@ pub enum IMAPIdleError {
 
 /// Represents a connection to an IMAP server.
 pub struct IMAPConnection {
-    session: Session<TlsStream<TcpStream>>,
+    session:Session<Box<dyn ImapConnection>>,
     inbox: Mailbox,
     idle_interval: Duration,
 }
@@ -37,7 +34,7 @@ impl IMAPConnection {
     pub fn connect(config: &Config) -> Result<Self, String> {
         let imap_cfg = config.imap.clone();
         let client = imap::ClientBuilder::new(imap_cfg.host, imap_cfg.port)
-            .native_tls()
+            .connect()
             .map_err(|e| format!("couldn't create imap client: {}", e))?;
         let mut session = client
             .login(imap_cfg.username, imap_cfg.password)
