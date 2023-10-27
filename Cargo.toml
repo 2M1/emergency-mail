@@ -19,7 +19,7 @@ no-panic = "0.1"
 version = "0.5.3"
 features = ["embedded_images"]
 
-[dependencies.windows]
+[target.'cfg(windows)'.dependencies.windows]
 version = "0.48"
 features = [
     "Data_Xml_Dom",
@@ -34,6 +34,11 @@ features = [
 
 [dev-dependencies]
 mockall = "0.11.4"
+
+[features]
+default = ["pdf"]
+xps = []
+pdf = []
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"

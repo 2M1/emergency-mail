@@ -5,5 +5,5 @@ rustc -Vv || exit /b 1
 cargo -V || exit /b 1
 
 :: Build and test main crate
-cargo build --locked || exit /b 1
-cargo test || exit /b 1
+cargo build --locked --features xps || exit /b 1
+cargo test --features=xps,pdf || exit /b 1
