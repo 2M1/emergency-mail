@@ -208,15 +208,15 @@ impl FromStr for Emergency {
                 }
 
                 "Status" => {
-                    if let Some(_) = header_indicies {
+                    if header_indicies.is_some() {
                         warn!("Found multiple alarm table headers in line {}!", line_nr);
                     }
 
                     header_indicies = Some(parse_alarm_table_header(&mut in_stream, &mut line_nr));
-                    continue; // skip the line end ~~ skip, since we already parsed it
+                    continue; // skip the line end ~~, since we already parsed it
                 }
                 "ALARM" => {
-                    if let None = header_indicies {
+                    if header_indicies.is_none() {
                         warn!(
                             "Found alarm table entry before header in line {}! skipping!",
                             line_nr
@@ -224,7 +224,7 @@ impl FromStr for Emergency {
                         continue;
                     } else if let Some(headers) = header_indicies {
                         parse_alarm_table_entry(&mut in_stream, headers, &mut ems, &mut line_nr);
-                        continue; // skip the line end ~~ skip, since we already parsed it
+                        continue; // skip the line end ~~, since we already parsed it
                     }
                 }
 

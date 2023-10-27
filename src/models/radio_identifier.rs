@@ -20,6 +20,7 @@ impl RadioIdentifier {
 impl FromStr for RadioIdentifier {
     type Err = String;
 
+    //noinspection ALL
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut in_stream = s.chars();
 

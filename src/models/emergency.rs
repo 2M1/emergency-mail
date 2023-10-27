@@ -85,13 +85,13 @@ impl Emergency {
     }
 
     pub fn get_patient_name(&self) -> Option<String> {
-        if let Some(name) = &self.patient_name {
+        return if let Some(name) = &self.patient_name {
             let (last, first) = name.split_at(name.find(",").unwrap_or(name.len()));
             let first = &first[1..]; // the , of the first name is now the first char of first
-            return Some(format!("{} {}", first, last));
+            Some(format!("{} {}", first, last))
         } else {
-            return None;
-        }
+            None
+        };
     }
 
     pub fn get_obj_description(&self) -> Option<String> {

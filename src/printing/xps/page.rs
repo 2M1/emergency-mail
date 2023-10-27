@@ -85,93 +85,6 @@ impl PageBuilder for XPSPage {
         return (self.size.width / 10.0, self.size.height / 10.0);
     }
 
-    fn max_lines_before_overflow(&self, y: f32, _attrs: DrawingAttributes) -> usize {
-        let y = y * COORDINATE_MUKTIPLIER;
-
-        let mut curr_y = y;
-        let mut lines = 0;
-        while !self.should_wrap(curr_y) {
-            curr_y += LINE_HEIGHT;
-            lines += 1;
-        }
-        return lines; // TODO: validate this
-    }
-
-    fn will_multiline_overflow(
-        &self,
-        line_count: usize,
-        y: f32,
-        _attrs: DrawingAttributes,
-    ) -> bool {
-        let y = y * COORDINATE_MUKTIPLIER;
-
-        let mut curr_y = y;
-        for _ in 0..line_count {
-            curr_y += LINE_HEIGHT;
-        }
-        return self.should_wrap(curr_y);
-    }
-
-    fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes) {
-        let x = x * COORDINATE_MUKTIPLIER;
-        let y = y * COORDINATE_MUKTIPLIER;
-
-        debug_assert!(x >= self.margin);
-        debug_assert!(x <= (self.size.width - self.margin));
-        debug_assert!(y >= self.margin);
-        debug_assert!(y <= (self.size.height - self.margin));
-
-        let page = &self.page;
-
-        let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0);
-        let Ok(brush) = brush else {
-            error!("couldn't create brush");
-            return;
-        };
-
-        let glyphs = self._get_glyph_run(
-            Arc::clone(&self.font).as_ref(),
-            x,
-            y,
-            font_size!(attributes),
-            brush,
-        );
-        let Ok(glyphs) = glyphs else {
-            error!("couldn't create glyphs run: {:?}", glyphs.unwrap_err());
-            return;
-        };
-        if attributes.text_bold {
-            let bold_res = unsafe { glyphs.SetStyleSimulations(XPS_STYLE_SIMULATION_BOLD) };
-            if let Err(_e) = bold_res {
-                warn!("failed to create bold text, continuing with normal font!");
-            }
-        }
-
-        let glyphs_editor = unsafe { glyphs.GetGlyphsEditor() };
-        let Ok(glyphs_editor) = glyphs_editor else {
-            error!("couldn't get glyphs editor: {:?}", glyphs_editor.unwrap_err());
-            return;
-        };
-
-        let text_res = unsafe { glyphs_editor.SetUnicodeString(&HSTRING::from(text)) };
-        let Ok(_) = text_res else {
-            error!("couldn't set text: {:?}", text_res.unwrap_err());
-            return;
-        };
-
-        let apply_res = unsafe { glyphs_editor.ApplyEdits() };
-        let Ok(_) = apply_res else {
-            error!("couldn't apply edits: {:?}", apply_res.unwrap_err());
-            return;
-        };
-
-        let page_add_res = unsafe { page.GetVisuals().unwrap().Append(&glyphs) };
-        let Ok(_) = page_add_res else {
-            error!("couldn't add glyphs to page: {:?}", page_add_res.unwrap_err());
-            return;
-        };
-    }
-
     fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes) {
         assert!(points.len() >= 2);
 
@@ -274,6 +187,66 @@ impl PageBuilder for XPSPage {
         };
     }
 
+    fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes) {
+        let x = x * COORDINATE_MUKTIPLIER;
+        let y = y * COORDINATE_MUKTIPLIER;
+
+        debug_assert!(x >= self.margin);
+        debug_assert!(x <= (self.size.width - self.margin));
+        debug_assert!(y >= self.margin);
+        debug_assert!(y <= (self.size.height - self.margin));
+
+        let page = &self.page;
+
+        let brush = XPSHelper::create_colour_brush(&self.factory, 0, 0, 0);
+        let Ok(brush) = brush else {
+            error!("couldn't create brush");
+            return;
+        };
+
+        let glyphs = self._get_glyph_run(
+            Arc::clone(&self.font).as_ref(),
+            x,
+            y,
+            font_size!(attributes),
+            brush,
+        );
+        let Ok(glyphs) = glyphs else {
+            error!("couldn't create glyphs run: {:?}", glyphs.unwrap_err());
+            return;
+        };
+        if attributes.text_bold {
+            let bold_res = unsafe { glyphs.SetStyleSimulations(XPS_STYLE_SIMULATION_BOLD) };
+            if let Err(_e) = bold_res {
+                warn!("failed to create bold text, continuing with normal font!");
+            }
+        }
+
+        let glyphs_editor = unsafe { glyphs.GetGlyphsEditor() };
+        let Ok(glyphs_editor) = glyphs_editor else {
+            error!("couldn't get glyphs editor: {:?}", glyphs_editor.unwrap_err());
+            return;
+        };
+
+        let text_res = unsafe { glyphs_editor.SetUnicodeString(&HSTRING::from(text)) };
+        let Ok(_) = text_res else {
+            error!("couldn't set text: {:?}", text_res.unwrap_err());
+            return;
+        };
+
+        let apply_res = unsafe { glyphs_editor.ApplyEdits() };
+        let Ok(_) = apply_res else {
+            error!("couldn't apply edits: {:?}", apply_res.unwrap_err());
+            return;
+        };
+
+        let page_add_res = unsafe { page.GetVisuals().unwrap().Append(&glyphs) };
+        let Ok(_) = page_add_res else {
+            error!("couldn't add glyphs to page: {:?}", page_add_res.unwrap_err());
+            return;
+        };
+    }
+
     /// Adds multiple lines of text seperated by \n to the page.
     ///
     /// Returns the lowest y coordinate of the text.
@@ -303,6 +276,33 @@ impl PageBuilder for XPSPage {
         return curr_y;
     }
 
+    fn will_multiline_overflow(
+        &self,
+        line_count: usize,
+        y: f32,
+        _attrs: DrawingAttributes,
+    ) -> bool {
+        let y = y * COORDINATE_MUKTIPLIER;
+
+        let mut curr_y = y;
+        for _ in 0..line_count {
+            curr_y += LINE_HEIGHT;
+        }
+        return self.should_wrap(curr_y);
+    }
+
+    fn max_lines_before_overflow(&self, y: f32, _attrs: DrawingAttributes) -> usize {
+        let y = y * COORDINATE_MUKTIPLIER;
+
+        let mut curr_y = y;
+        let mut lines = 0;
+        while !self.should_wrap(curr_y) {
+            curr_y += LINE_HEIGHT;
+            lines += 1;
+        }
+        return lines; // TODO: validate this
+    }
+
     fn add_horizontal_divider(&mut self, y: f32) {
         let y = y * COORDINATE_MUKTIPLIER;
 
@@ -322,7 +322,8 @@ impl PageBuilder for XPSPage {
         self.add_outline_polygon(&points, DrawingAttributes::DEFAULT);
     }
 
-    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize) {
+    fn add_img(&mut self, _content: &[u8], _x: f32, _y: f32, _width: usize, _height: usize) {
+        // TODO: implement
         unimplemented!("adding images is not yet supported for xps printing");
     }
 }

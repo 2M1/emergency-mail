@@ -1,6 +1,5 @@
 use std::{cell::RefCell, io::Cursor, rc::Weak};
 
-use log::info;
 use printpdf::{
     image_crate::codecs, Color, Image, ImageTransform, IndirectFontRef, Line, Mm,
     PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
@@ -100,7 +99,7 @@ impl PageBuilder for PDFPage {
         let points = points.iter().map(|p| {
             (
                 // Points y needs to be inverted, because the printpdf crate uses the bottom left corner as origin not the top left.
-                printpdf::Point::new(Mm(p.x.into()), Mm((height as f32 - p.y).into())),
+                printpdf::Point::new(Mm(p.x.into()), Mm((height - p.y).into())),
                 false,
             )
         });
