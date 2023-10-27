@@ -474,9 +474,9 @@ dependencies = [
 
 [[package]]
 name = "imap"
-version = "3.0.0-alpha.11"
+version = "3.0.0-alpha.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7885c33b6c828ac13f79ec92f4c3224f439f040e693917ce4aa939ffeaa187e1"
+checksum = "c088f9992a0cd2ac0208dd3b1e0bb106a2f54e262f09756d554aa71219510056"
 dependencies = [
  "base64",
  "bufstream",
