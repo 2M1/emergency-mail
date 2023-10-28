@@ -1,8 +1,8 @@
 use std::{path::Path, process::Command};
 
-use log::trace;
 #[cfg(not(debug_assertions))]
-use log::{error, info}; // avoid the unused import warning
+use log::error;
+use log::{info, trace}; // avoid the unused import warning
 
 use crate::printing::document::Printable;
 
@@ -52,6 +52,11 @@ impl<'a> Printable for PDFFilePrinter<'a> {
         );
 
         let times = if cfg!(debug_assertions) { 1 } else { times };
+
+        if config.printing.disable.unwrap_or(false) {
+            info!("printing is disabled");
+            return;
+        }
 
         let mut binding = Command::new(&config.printing.sumatra_path);
         if let Some(printer) = &config.printing.printer {

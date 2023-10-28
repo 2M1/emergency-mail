@@ -18,6 +18,7 @@ pub struct PrintingConfig {
     pub additional_copies: Option<u8>,
     pub amt: u8,
     pub sumatra_path: String,
+    pub disable: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
