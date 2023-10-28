@@ -367,7 +367,7 @@ fn create_unit_table(
     start_y += points_to_mm!(text_line_height!(DrawingAttributes::LABEL)) * 2.0;
 
     // calculate the number of items that fit on the page (excluding the header: -1):
-    let max_items = page.max_lines_before_overflow(start_y, DrawingAttributes::DEFAULT) - 1;
+    let max_items = page.max_lines_before_overflow(start_y, DrawingAttributes::FIELD_VALUE) - 1;
     let max_items = min(ems.unit_alarm_times.len(), max_items);
 
     let page_units = &ems.unit_alarm_times[0..max_items];
