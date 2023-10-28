@@ -36,7 +36,7 @@ fn main() {
     println!("{}", ems);
 
     let mut connection = IMAPConnection::connect(&config).expect("couldn't connect to imap server");
-    trace!("ready! awaiting new mails.");
+    info!("ready! awaiting new mails.");
     loop {
         let new_mails = connection.reconnecting_await_new_mail();
         for mail in new_mails {

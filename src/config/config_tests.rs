@@ -3,7 +3,7 @@ use std::{env, str::FromStr};
 use crate::config::Config;
 
 #[cfg(test)]
-const TEST_FULL_CONFIG: &'static str = include_str!("../../examples/config_full.yaml");
+const TEST_FULL_CONFIG: &str = include_str!("../../examples/config_full.yaml");
 
 #[test]
 fn test_from_str() {
@@ -20,6 +20,8 @@ fn test_from_str() {
         Some("HP_LaserJet_500_Pro".to_string())
     );
     assert_eq!(config.printing.amt, 1);
+    assert_eq!(config.printing.disabled(), false);
+    assert_eq!(config.printing.disable, Some(false))
 }
 
 #[test]
@@ -42,6 +44,8 @@ fn test_parse_file() {
         config.printing.sumatra_path,
         "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe".to_string()
     );
+    assert_eq!(config.printing.disabled(), false);
+    assert_eq!(config.printing.disable, Some(false))
 }
 
 #[test]
@@ -68,6 +72,8 @@ fn test_parse_file_minmal_config() {
         "C:\\Users\\Markus\\AppData\\Local\\SumatraPDF\\SumatraPDF.exe".to_string()
     );
     assert_eq!(config.printing.additional_copies, None);
+    assert_eq!(config.printing.disable, None);
+    assert_eq!(config.printing.disabled(), false);
 
     env::remove_var("EM_IMAP_HOST");
     env::remove_var("EM_IMAP_USERNAME");

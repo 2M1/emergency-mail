@@ -150,7 +150,7 @@ impl IMAPConnection {
                         init_err_count += 1;
                         if init_err_count > 5 {
                             error!("too many initialisation errors");
-                            // TODO: decide on strategy
+                            // TODO: decide on strategy: new strategy error out and reestablish new connection.
                             // currently: reconnect immediately
                         }
                         info!("reconnecting");

@@ -76,7 +76,7 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
     }
 
     temp_dir.push("output.pdf");
-    if cfg!(debug_assertions) || config.printing.disable.unwrap_or(false) {
+    if cfg!(debug_assertions) || config.printing.disabled() {
         temp_dir = Path::new("test.pdf").to_path_buf();
     }
 

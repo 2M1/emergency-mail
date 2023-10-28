@@ -53,7 +53,7 @@ impl<'a> Printable for PDFFilePrinter<'a> {
 
         let times = if cfg!(debug_assertions) { 1 } else { times };
 
-        if config.printing.disable.unwrap_or(false) {
+        if config.printing.disabled() {
             info!("printing is disabled");
             return;
         }

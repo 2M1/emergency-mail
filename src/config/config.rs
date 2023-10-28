@@ -45,6 +45,12 @@ impl Config {
     }
 }
 
+impl PrintingConfig {
+    pub fn disabled(&self) -> bool {
+        return self.disable.unwrap_or(false);
+    }
+}
+
 impl FromStr for Config {
     type Err = String;
 

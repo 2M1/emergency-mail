@@ -2,9 +2,9 @@ use std::{env, str::FromStr};
 
 use crate::{config::Config, models::emergency::Emergency, printing::print_ems::count_copies};
 
-const EMS_FULL: &'static str = include_str!("../../examples/emergency_bgebg.txt");
-const EMS_NONE: &'static str = include_str!("../../examples/emergency_obj.txt");
-const EMS_ONE: &'static str = include_str!("../../examples/emergency_simple.txt");
+const EMS_FULL: &str = include_str!("../../examples/emergency_bgebg.txt");
+const EMS_NONE: &str = include_str!("../../examples/emergency_obj.txt");
+const EMS_ONE: &str = include_str!("../../examples/emergency_simple.txt");
 
 #[test]
 fn test_count_copies_many() {
