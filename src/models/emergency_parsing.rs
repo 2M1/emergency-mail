@@ -334,7 +334,6 @@ fn parse_alarm_table_header(
         }
     }
 
-    println!("header: {:?}", indices);
     return indices;
 }
 

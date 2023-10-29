@@ -77,7 +77,12 @@ impl IMAPConnection {
         let messages = fetch_res.unwrap();
         return messages
             .iter()
+            .map(|m| {
+                println!("{:?}", m);
+                m
+            })
             .map(Message::from_fetch)
+            .filter(|m| m.text.is_some())
             .map(|m| {
                 trace!("fetched message: {:?}", m.uid);
                 // set the maximum uid currently seen.
@@ -136,22 +141,24 @@ impl IMAPConnection {
     /// The reconnect strategy is currently to reconnect immediately. In the future this might be changed
     /// to wait for a dynamically calculated time period, based on the number of errors, before retrying.
     ///
-    pub fn reconnecting_await_new_mail(&mut self) -> Vec<Option<String>> {
+    pub fn reconnecting_await_new_mail(&mut self) -> Result<Vec<Option<String>>, ()> {
+        const MAX_RECONNECTION_ATTEMPTS: u8 = 3; // try to reconnect, but fail rather fast to
         let mut init_err_count = 0;
         loop {
             let result = self.await_new_mail();
             if let Ok(exists) = result {
                 info!("new mail nr: {}", exists);
                 let newest = self.load_newest();
-                return newest;
+                return Ok(newest);
             } else if let Err(e) = result {
                 match e {
                     IMAPIdleError::InitialisationError => {
                         init_err_count += 1;
-                        if init_err_count > 5 {
+                        if init_err_count > MAX_RECONNECTION_ATTEMPTS {
                             error!("too many initialisation errors");
-                            // TODO: decide on strategy: new strategy error out and reestablish new connection.
-                            // currently: reconnect immediately
+                            // strategy: error out and signal to the main process to reestablish
+                            // the connection from the get go (not only the idle request).
+                            return Err(());
                         }
                         info!("reconnecting");
                     }
