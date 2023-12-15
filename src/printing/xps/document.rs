@@ -73,7 +73,10 @@ impl XPSSingleDocument {
         };
 
         let Ok(part_uri) = part_uri_result else {
-            error!("couldn't create part uri: {:?}", part_uri_result.unwrap_err());
+            error!(
+                "couldn't create part uri: {:?}",
+                part_uri_result.unwrap_err()
+            );
             return;
         };
 
@@ -81,14 +84,20 @@ impl XPSSingleDocument {
         self.fixed_sequence_part = Some(part_uri);
 
         let Ok(doc_seq) = doc_seq_result else {
-            error!("couldn't create document sequence: {:?}", doc_seq_result.unwrap_err());
+            error!(
+                "couldn't create document sequence: {:?}",
+                doc_seq_result.unwrap_err()
+            );
             return;
         };
 
         let doc_seq_result = unsafe { self.package.SetDocumentSequence(&doc_seq) };
 
         let Ok(_) = doc_seq_result else {
-            error!("couldn't set document sequence: {:?}", doc_seq_result.unwrap_err());
+            error!(
+                "couldn't set document sequence: {:?}",
+                doc_seq_result.unwrap_err()
+            );
             return;
         };
         self.document_sequence = Some(doc_seq);
@@ -99,7 +108,10 @@ impl XPSSingleDocument {
         };
 
         let Ok(part_uri) = part_uri_result else {
-            error!("couldn't create document part uri: {:?}", part_uri_result.unwrap_err());
+            error!(
+                "couldn't create document part uri: {:?}",
+                part_uri_result.unwrap_err()
+            );
             return;
         };
 
@@ -185,7 +197,9 @@ impl DocumentBuilder for XPSSingleDocument {
         let page = XPSPage::new(Arc::clone(&self.factory), page);
         let Ok(page) = page else {
             error!("couldn't create page instance!");
-            return Err(DocumentBuildingError::Error("couldn't create page instance!".to_string()));
+            return Err(DocumentBuildingError::Error(
+                "couldn't create page instance!".to_string(),
+            ));
         };
 
         self.pages.push(page);

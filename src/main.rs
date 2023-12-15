@@ -64,6 +64,7 @@ fn main() {
         let res = catch_unwind(|| run_mail_loop(&config)); // catch panics and restart
         if res.is_err() {
             info!("caught panic, restarting");
+            trace!("panic: {:?}", res);
         }
     }
 }

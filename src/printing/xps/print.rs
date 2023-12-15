@@ -66,7 +66,10 @@ pub fn print_test(doc: XPSSingleDocument) {
     };
 
     let Ok(part_uri) = part_uri_result else {
-        error!("couldn't create document part uri: {:?}", part_uri_result.unwrap_err());
+        error!(
+            "couldn't create document part uri: {:?}",
+            part_uri_result.unwrap_err()
+        );
         return;
     };
 
@@ -97,7 +100,10 @@ pub fn print_test(doc: XPSSingleDocument) {
     };
 
     let Ok(part_uri) = part_uri_result else {
-        error!("couldn't create document part uri: {:?}", part_uri_result.unwrap_err());
+        error!(
+            "couldn't create document part uri: {:?}",
+            part_uri_result.unwrap_err()
+        );
         return;
     };
 

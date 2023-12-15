@@ -53,7 +53,10 @@ impl XPSHelper {
             factory.CreateFontResource(&in_stream, XPS_FONT_EMBEDDING_OBFUSCATED, &part_uri, false)
         };
         let Ok(font_resource) = font_resource else {
-            error!("couldn't create font resource: {:?}", font_resource.unwrap_err());
+            error!(
+                "couldn't create font resource: {:?}",
+                font_resource.unwrap_err()
+            );
             return Err(());
         };
 

@@ -153,7 +153,10 @@ impl PageBuilder for XPSPage {
 
         let add_res = unsafe { geometry.GetFigures().unwrap().Append(&figure) };
         let Ok(_) = add_res else {
-            error!("couldn't add figure to geometry: {:?}", add_res.unwrap_err());
+            error!(
+                "couldn't add figure to geometry: {:?}",
+                add_res.unwrap_err()
+            );
             return;
         };
 
@@ -224,7 +227,10 @@ impl PageBuilder for XPSPage {
 
         let glyphs_editor = unsafe { glyphs.GetGlyphsEditor() };
         let Ok(glyphs_editor) = glyphs_editor else {
-            error!("couldn't get glyphs editor: {:?}", glyphs_editor.unwrap_err());
+            error!(
+                "couldn't get glyphs editor: {:?}",
+                glyphs_editor.unwrap_err()
+            );
             return;
         };
 
@@ -242,7 +248,10 @@ impl PageBuilder for XPSPage {
 
         let page_add_res = unsafe { page.GetVisuals().unwrap().Append(&glyphs) };
         let Ok(_) = page_add_res else {
-            error!("couldn't add glyphs to page: {:?}", page_add_res.unwrap_err());
+            error!(
+                "couldn't add glyphs to page: {:?}",
+                page_add_res.unwrap_err()
+            );
             return;
         };
     }

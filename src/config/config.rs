@@ -26,6 +26,7 @@ pub struct Config {
     pub imap: IMAPConfig,
     pub interval: u64,
     pub printing: PrintingConfig,
+    pub pdf_save_path: Option<String>,
 }
 
 const ENV_IMAP_HOST: &str = "EM_IMAP_HOST";

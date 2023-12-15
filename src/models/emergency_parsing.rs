@@ -58,7 +58,10 @@ fn skip_line(chars: &mut Peekable<Chars>, line_nr: &mut u64) -> () {
 fn expect_literal(chars: &mut Peekable<Chars>, literal: &str, line_nr: u64) -> Result<(), String> {
     for c in literal.chars() {
         let Some(current_char) = chars.next() else {
-            return Err(format!("Expected literal \"{}\" in line {}, got eoi instead.", literal, line_nr));
+            return Err(format!(
+                "Expected literal \"{}\" in line {}, got eoi instead.",
+                literal, line_nr
+            ));
         };
         if c != current_char {
             return Err(format!(

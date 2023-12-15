@@ -4,6 +4,7 @@ imap:
   username: "abc" # leave empty to use the environment variable EM_SMTP_USERNAME
   password: "def" # leave empty to use the environment variable EM_SMTP_PASSWORD
 interval: 25 # in minutes
+pdf_save_path: "pdfs/"  # path to save the pdfs to, leave empty to not save pdfs.
 printing:
   min_copies: 2 # minimum number of duplicate copies to be printed
   max_copies: 5 # maximum number of duplicate copies to be printed

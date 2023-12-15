@@ -1,3 +1,5 @@
+use std::fmt::format;
+use std::path::PathBuf;
 use std::{
     cmp::{max, min},
     fs,
@@ -66,31 +68,37 @@ struct AlarmTableOffsets {
 pub fn print_emergency(ems: Emergency, config: &Config) {
     let mut doc = PDFDocument::new();
     create_emergency_doc(&ems, &mut doc, config);
-    let mut temp_dir = std::env::temp_dir();
-    temp_dir.push(Path::new("emergency_mail\\"));
 
-    let res = fs::create_dir_all(&temp_dir);
+    let mut ems_dir: PathBuf = if config.pdf_save_path.is_some() {
+        Path::new(config.pdf_save_path.as_ref().unwrap().as_str()).to_path_buf()
+    } else {
+        let mut tmp = std::env::temp_dir();
+        tmp.push(Path::new("emergency_mail\\"));
+        tmp
+    };
+
+    let res = fs::create_dir_all(&ems_dir);
     if let Err(e) = res {
         error!("couldn't create temp dir: {}", e);
         return;
     }
 
-    temp_dir.push("output.pdf");
-    if cfg!(debug_assertions) || config.printing.disabled() {
-        temp_dir = Path::new("test.pdf").to_path_buf();
+    ems_dir.push(format!("{}_{}.pdf", ems.alarm_time, ems.keyword));
+    if cfg!(debug_assertions) || (config.printing.disabled() && config.pdf_save_path.is_none()) {
+        ems_dir = Path::new("test.pdf").to_path_buf();
     }
 
-    trace!("saving to: {:?}", temp_dir);
+    trace!("saving to: {:?}", &ems_dir);
     let docref = doc.document;
     let docref = Rc::try_unwrap(docref)
         .map_err(|_| DocumentBuildingError::Error("couldn't unwrap document".to_string()))
         .unwrap()
         .into_inner();
-    let file = fs::File::create(&temp_dir).unwrap();
+    let file = fs::File::create(&ems_dir).unwrap();
     let mut writer = BufWriter::new(file);
     docref.save(&mut writer).unwrap();
 
-    let printer = PDFFilePrinter::new(&temp_dir);
+    let printer = PDFFilePrinter::new(ems_dir.as_path());
     printer.print(count_copies(&ems, config), config);
 }
 
