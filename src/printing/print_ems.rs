@@ -1,3 +1,4 @@
+use chrono::Local;
 use std::fmt::format;
 use std::path::PathBuf;
 use std::{
@@ -83,7 +84,12 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
         return;
     }
 
-    ems_dir.push(format!("{}_{}.pdf", ems.alarm_time, ems.keyword));
+    ems_dir.push(format!(
+        "{}_{}.pdf",
+        Local::now().format("%Y-%m-%d_%H:%M:%S"),
+        // using current time since alarm time could be duplicated when multiple mails are send (e.g. resend)
+        ems.keyword,
+    ));
     if cfg!(debug_assertions) || (config.printing.disabled() && config.pdf_save_path.is_none()) {
         ems_dir = Path::new("test.pdf").to_path_buf();
     }
@@ -109,7 +115,7 @@ pub(super) fn count_units_from_configured_amt(ems: &Emergency, config: &Config) 
         // skipp all units, that do not have a standard radio id (Funkkenner)
 
         if unit.agency == config.printing.amt && unit.county == "PM" && unit.org == "FL" {
-            // NOTE: county and ord are hardcoded for now!
+            // NOTE: county and org are hardcoded for now!
             count += 1;
         }
     }

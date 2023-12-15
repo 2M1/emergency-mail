@@ -14,7 +14,7 @@ def main():
 
     with smtplib.SMTP(HOST, PORT) as server:
         server.ehlo()
-        server.starttls(context-context)
+        server.starttls(context=context)
         server.ehlo()
         server.login(USER, PASS)
 

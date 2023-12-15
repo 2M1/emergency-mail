@@ -1,8 +1,8 @@
 imap:
-  host: "imap.gmail.com" # leave empty to use the environment variable EM_SMTP_HOST
+  host: "imap.gmail.com" # leave empty to use the environment variable EM_IMAP_HOST
   port: 993
-  username: "abc" # leave empty to use the environment variable EM_SMTP_USERNAME
-  password: "def" # leave empty to use the environment variable EM_SMTP_PASSWORD
+  username: "abc" # leave empty to use the environment variable EM_IMAP_USERNAME
+  password: "def" # leave empty to use the environment variable EM_IMAP_PASSWORD
 interval: 25 # in minutes
 pdf_save_path: "pdfs/"  # path to save the pdfs to, leave empty to not save pdfs.
 printing:

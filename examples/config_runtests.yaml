@@ -1,9 +1,10 @@
 imap:
-  host: "" # leave empty to use the environment variable EM_SMTP_HOST
+  host: "" # leave empty to use the environment variable EM_IMAP_HOST
   port: 993
-  username: "" # leave empty to use the environment variable EM_SMTP_USERNAME
-  password: "" # leave empty to use the environment variable EM_SMTP_PASSWORD
+  username: "" # leave empty to use the environment variable EM_IMAP_USERNAME
+  password: "" # leave empty to use the environment variable EM_IMAP_PASSWORD
 interval: 25 # in minutes
+pdf_save_path: "pdfs/"  # path to save the pdfs to, leave empty to not save pdfs.
 printing:
   min_copies: 1 # number of duplicate copies to be printed
   max_copies: 1

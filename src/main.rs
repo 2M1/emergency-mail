@@ -38,7 +38,7 @@ fn run_mail_loop(config: &Config) {
                 continue;
             }
 
-            let mail_str = mail.unwrap();
+            let mail_str = mail.unwrap(); // will never panic, see check above
             let mail_str = mail_str_decode_unicode(mail_str);
             let ems = Emergency::from_str(mail_str.as_str()).unwrap();
             trace!("ems: {:?}", ems);
@@ -56,10 +56,10 @@ fn main() {
 
     com::init().unwrap();
 
-    let ems = include_str!("../examples/emergency_many_units.txt");
+    /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
     let ems = Emergency::from_str(ems.as_str()).unwrap();
-    print_emergency(ems, &config);
+    print_emergency(ems, &config);*/
     loop {
         let res = catch_unwind(|| run_mail_loop(&config)); // catch panics and restart
         if res.is_err() {
