@@ -2,11 +2,14 @@ use std::{path::Path, process::Command};
 
 #[cfg(not(debug_assertions))]
 use log::error;
-use log::{info, trace}; // avoid the unused import warning
+use log::{debug, info, trace}; // avoid the unused import warning
 
 use crate::printing::document::Printable;
 
-pub struct PDFFilePrinter<'a> {
+pub struct PDFFilePrinter<'a>
+where
+    PDFFilePrinter<'a>: Printable,
+{
     pub path: &'a Path,
 }
 
@@ -67,7 +70,7 @@ impl<'a> Printable for PDFFilePrinter<'a> {
         binding.arg("-print-settings").arg(format!("{}x", times));
 
         let command = binding.arg(self.path.to_str().expect("couldn't convert path to string"));
-        trace!("command: {:?}", command);
+        debug!("command: {:?}", command);
         self._run_print_cmd(binding);
     }
 }

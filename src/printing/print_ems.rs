@@ -1,5 +1,4 @@
 use chrono::Local;
-use std::fmt::format;
 use std::path::PathBuf;
 use std::{
     cmp::{max, min},
@@ -86,9 +85,10 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
 
     ems_dir.push(format!(
         "{}_{}.pdf",
-        Local::now().format("%Y-%m-%d_%H:%M:%S"),
+        Local::now().format("%Y-%m-%d_%H-%M-%S"),
+        // using - since windows does not allow : in file names
         // using current time since alarm time could be duplicated when multiple mails are send (e.g. resend)
-        ems.keyword,
+        ems.keyword.replace(':', "-"), // due to windows, see above.
     ));
     if cfg!(debug_assertions) || (config.printing.disabled() && config.pdf_save_path.is_none()) {
         ems_dir = Path::new("test.pdf").to_path_buf();
@@ -111,7 +111,9 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
 pub(super) fn count_units_from_configured_amt(ems: &Emergency, config: &Config) -> usize {
     let mut count = 0;
     for unit in &ems.dispatched_units {
-        let Either::Left(unit) = unit else { continue };
+        let Either::Left(unit) = unit else {
+            continue;
+        };
         // skipp all units, that do not have a standard radio id (Funkkenner)
 
         if unit.agency == config.printing.amt && unit.county == "PM" && unit.org == "FL" {
@@ -124,16 +126,14 @@ pub(super) fn count_units_from_configured_amt(ems: &Emergency, config: &Config) 
 
 pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
     let mut count = count_units_from_configured_amt(ems, config);
-    println!("unit copies: {}", count);
     if let Some(additional_copies) = config.printing.additional_copies {
         count += additional_copies as usize;
     }
-    println!("with additional copies: {}", count);
     count = max(count, config.printing.min_copies as usize);
     if let Some(max_copies) = config.printing.max_copies {
         count = min(count, max_copies as usize);
     }
-    println!("corrected for interval: {}", count);
+    trace!("number of copies: {}", count);
     return count;
 }
 
