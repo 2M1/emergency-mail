@@ -1,9 +1,12 @@
 use std::panic::catch_unwind;
 use std::str::FromStr;
+use std::thread::sleep;
+use std::time::Duration;
 
 use config::logging;
 use config::Config;
 
+use log::debug;
 use log::info;
 use log::trace;
 
@@ -22,7 +25,7 @@ const EMERGENCY: &str = include_str!("../examples/emergency_bgebg.txt");
 
 fn run_mail_loop(config: &Config) {
     let mut connection = IMAPConnection::connect(config).expect("couldn't connect to imap server");
-    info!("ready! awaiting new mails.");
+    info!("Bereit zum Empfangen der Alarmemails.");
     loop {
         let new_mails = connection.reconnecting_await_new_mail();
         if new_mails.is_err() {
@@ -41,7 +44,7 @@ fn run_mail_loop(config: &Config) {
             let mail_str = mail.unwrap(); // will never panic, see check above
             let mail_str = mail_str_decode_unicode(mail_str);
             let ems = Emergency::from_str(mail_str.as_str()).unwrap();
-            trace!("ems: {:?}", ems);
+            debug!("ems: {:?}", ems);
             print_emergency(ems, &config);
         }
     }
@@ -60,11 +63,21 @@ fn main() {
     let ems = mail_str_decode_unicode(ems.to_string());
     let ems = Emergency::from_str(ems.as_str()).unwrap();
     print_emergency(ems, &config);*/
+    let mut is_first = true;
     loop {
         let res = catch_unwind(|| run_mail_loop(&config)); // catch panics and restart
         if res.is_err() {
             info!("caught panic, restarting");
             trace!("panic: {:?}", res);
+            if is_first {
+                is_first = false;
+                continue;
+            }
+            // wait for 10 seconds before restarting
+            // this is to slow a panic loop down, so that the log messages can be read
+            sleep(Duration::from_secs(10));
+        } else {
+            is_first = true;
         }
     }
 }

@@ -16,15 +16,15 @@ use log4rs::{
 };
 
 #[cfg(not(debug_assertions))]
-const MAX_LOG_SIZE: u64 = 100 * 1024; // 100KB
+const MAX_LOG_SIZE: u64 = 500 * 1024; // 500KB
 #[cfg(debug_assertions)]
 const MAX_LOG_SIZE: u64 = 10 * 1024; // 10KB
 
 const MAX_LOG_COUNT: u32 = 10;
 #[cfg(not(debug_assertions))]
-const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Info;
+const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Debug;
 #[cfg(debug_assertions)]
-const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
+const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Debug;
 
 /// The pattern used for logging.
 /// @see [https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html](https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html)
@@ -49,7 +49,11 @@ pub fn init_logging() -> Handle {
         .unwrap();
 
     let config = Config::builder()
-        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .appender(
+            Appender::builder()
+                .filter(Box::new(ThresholdFilter::new(LevelFilter::Trace)))
+                .build("stdout", Box::new(stdout)),
+        )
         .appender(
             Appender::builder()
                 .filter(Box::new(ThresholdFilter::new(FILE_LOG_LEVEL)))
@@ -59,7 +63,7 @@ pub fn init_logging() -> Handle {
             Root::builder()
                 .appender("stdout")
                 .appender("rolling")
-                .build(LevelFilter::Trace),
+                .build(LevelFilter::Debug),
         )
         .unwrap();
 

@@ -1,4 +1,4 @@
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, str::FromStr, time::Duration};
 
@@ -64,7 +64,7 @@ impl FromStr for Config {
             let host = env::var(ENV_IMAP_HOST)
                 .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_HOST))?;
             config.imap.host = host;
-            info!("acquired imap host from environment: {}", config.imap.host);
+            debug!("acquired imap host from environment: {}", config.imap.host);
         }
 
         if config.imap.password.is_empty() {
@@ -72,15 +72,23 @@ impl FromStr for Config {
                 .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_PASSWORD))?;
 
             config.imap.password = password;
-            info!("acquired imap password from environment");
+            debug!("acquired imap password from environment");
 
             if config.imap.username.is_empty() {
                 // only allow empty username, if password is also empty (makes no sense otherwise)
                 let username = env::var(ENV_IMAP_USERNAME)
                     .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_USERNAME))?;
                 config.imap.username = username;
-                info!("acquired imap username from environment");
+                debug!("acquired imap username from environment");
             }
+        }
+
+        if config.printing.disabled() {
+            if cfg!(not(debug_assertions)) && config.pdf_save_path.is_none() {
+                // during debug, a test.pdf file is always saved to the current directory
+                return Err("printing is disabled, but no pdf save path is set".to_string());
+            }
+            info!("printing is disabled!");
         }
 
         return Ok(config);

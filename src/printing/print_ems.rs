@@ -8,7 +8,7 @@ use std::{
     rc::Rc,
 };
 
-use log::{error, info, trace};
+use log::{debug, error, info, trace};
 
 use crate::{
     config::Config,
@@ -277,12 +277,11 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: 
         time: 0.0,
     };
     let home_count = count_units_from_configured_amt(ems, config);
-    println!("homecount: {}", home_count);
     let remaining = create_unit_table(ems, page, curr_y, &mut offsets, home_count);
     let printed = ems.unit_alarm_times.len() - remaining;
 
     if remaining > 0 {
-        info!("creating second page");
+        trace!("creating second page");
         let page_id = doc.new_page().unwrap();
         let page = doc.page_at(page_id).unwrap();
         let curr_y = 25.0;

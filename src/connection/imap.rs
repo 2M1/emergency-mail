@@ -77,10 +77,6 @@ impl IMAPConnection {
         let messages = fetch_res.unwrap();
         return messages
             .iter()
-            .map(|m| {
-                println!("{:?}", m);
-                m
-            })
             .map(Message::from_fetch)
             .filter(|m| m.text.is_some())
             .map(|m| {
@@ -109,7 +105,6 @@ impl IMAPConnection {
 
             return match response {
                 UnsolicitedResponse::Exists(exists) => {
-                    info!("new mails: {} mails in INBOX", exists);
                     new_max = max(new_max, exists);
                     false
                 }

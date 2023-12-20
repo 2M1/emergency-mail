@@ -5,7 +5,7 @@ use std::{
 };
 
 use chrono::NaiveDateTime;
-use log::{info, trace, warn};
+use log::{debug, info, trace, warn};
 
 use crate::models::{
     either::Either, radio_identifier::RadioIdentifier, unit_alarm_time::UnitAlarmTime,
@@ -425,7 +425,7 @@ fn parse_dispatched_units(in_stream: &mut Peekable<Chars<'_>>, ems: &mut Emergen
         if let Ok(identifier) = identifier {
             ems.dispatched_units.push(Either::Left(identifier));
         } else {
-            info!(
+            debug!(
                 "Failed to parse RadioIdentifier {} using as bare Identifier!",
                 em
             );
