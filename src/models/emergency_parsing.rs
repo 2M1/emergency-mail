@@ -373,9 +373,6 @@ fn parse_alarm_table_entry(
             return;
         }
     }
-    while entries.len() < headers.header_count {
-        entries.push(String::new());
-    }
 
     // parse entry:
     if entries.len() <= max(headers.unit, max(headers.station, headers.alarm_time)) {
@@ -396,11 +393,9 @@ fn parse_alarm_table_entry(
     let id = match id {
         Ok(id) => Either::Left(id),
         Err(e) => {
-            trace!(
+            debug!(
                 "Failed to parse RadioIdentifier {} in line {}: {}, using bare.",
-                entries[headers.unit],
-                *line_nr,
-                e
+                entries[headers.unit], *line_nr, e
             );
             Either::Right(id_str)
         }

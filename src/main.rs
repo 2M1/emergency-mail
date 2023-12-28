@@ -7,6 +7,7 @@ use config::logging;
 use config::Config;
 
 use log::debug;
+use log::error;
 use log::info;
 use log::trace;
 
@@ -30,8 +31,15 @@ fn run_mail_loop(config: &Config) {
         let new_mails = connection.reconnecting_await_new_mail();
         if new_mails.is_err() {
             connection.end();
-            connection = IMAPConnection::connect(config).expect("couldn't connect to imap server");
-            continue; // reconnect on error
+            info!("reconnecting to imap server");
+            let reconnection = IMAPConnection::connect(config);
+            if reconnection.is_err() {
+                error!("couldn't reconnect to imap server");
+                return;
+            }
+            info!("Bereit zum Empfangen der Alarmemails.");
+            connection = reconnection.unwrap(); // will never panic, see check above
+            continue;
         }
         let new_mails = new_mails.unwrap(); // will never panic, see check above
 

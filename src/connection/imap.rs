@@ -155,11 +155,11 @@ impl IMAPConnection {
                             // the connection from the get go (not only the idle request).
                             return Err(());
                         }
-                        info!("reconnecting");
+                        info!("resetting idle connection");
                     }
 
                     IMAPIdleError::ConnectionError => {
-                        info!("reconnecting");
+                        info!("resetting idle connection");
                         init_err_count = 0;
                     }
                 }
