@@ -6,10 +6,10 @@ use std::time::Duration;
 use config::logging;
 use config::Config;
 
-use log::debug;
-use log::error;
-use log::info;
 use log::trace;
+use log::{debug, error, info};
+
+use ctrlc;
 
 use crate::connection::imap::IMAPConnection;
 use crate::connection::message::mail_str_decode_unicode;
@@ -45,7 +45,7 @@ fn run_mail_loop(config: &Config) {
 
         for mail in new_mails {
             if mail.is_none() {
-                trace!("mail is none");
+                debug!("mail is none");
                 continue;
             }
 
@@ -66,6 +66,12 @@ fn main() {
     let config = Config::parse(&config_path).expect("couldn't parse config");
 
     com::init().unwrap();
+
+    ctrlc::set_handler(move || {
+        info!("received SIGINT, exiting.");
+        std::process::exit(0);
+    })
+    .expect("couldn't set SIGINT handler");
 
     /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
