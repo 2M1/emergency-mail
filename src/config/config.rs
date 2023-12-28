@@ -2,12 +2,20 @@ use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, str::FromStr, time::Duration};
 
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub enum IMAPModes {
+    #[default]
+    Idle,
+    Poll,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IMAPConfig {
     pub host: String,
     pub port: u16,
     pub username: String,
     pub password: String,
+    pub mode: Option<IMAPModes>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

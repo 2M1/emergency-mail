@@ -62,8 +62,36 @@ impl IMAPConnection {
     /// the uid is then updated to the maximum uid of the fetched mails.
     /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
+    #[deprecated(note = "use load_new_mails instead")]
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
-        let set = format!("{}:*", self.inbox.exists + 1);
+        return self.load_since(self.inbox.exists + 1).unwrap_or_else(|e| {
+            error!("couldn't load newest mails: {:?}", e);
+            Vec::new()
+        });
+    }
+
+    /// loads the newest mails in the inbox from the server
+    ///
+    /// # description
+    /// fetches all mails with a uid greater than the current max uid in the inbox.
+    /// the uid value is transmitted when selecting the inbox in the connect method.
+    /// the uid is then updated to the maximum uid of the fetched mails.
+    /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
+    ///
+    pub fn load_new_mails(&mut self) -> Result<Vec<Option<String>>, ()> {
+        return self.load_since(self.inbox.exists + 1);
+    }
+
+    /// loads the newest mails in the inbox from the server
+    ///
+    /// # description
+    /// fetches all mails with a uid greater than the current max uid in the inbox.
+    /// the uid value is transmitted when selecting the inbox in the connect method.
+    /// the uid is then updated to the maximum uid of the fetched mails.
+    /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
+    ///
+    pub fn load_since(&mut self, min_id: u32) -> Result<Vec<Option<String>>, ()> {
+        let set = format!("{}:*", min_id);
         trace!("fetching mails with set {}", set);
         let fetch_res = self.session.fetch(
             set,
@@ -71,11 +99,11 @@ impl IMAPConnection {
         );
         if let Err(e) = fetch_res {
             error!("couldn't fetch new mails: {}", e);
-            return vec![];
+            return Err(());
         }
 
-        let messages = fetch_res.unwrap();
-        return messages
+        let messages = fetch_res.unwrap(); // will never panic, see check above
+        return Ok(messages
             .iter()
             .map(Message::from_fetch)
             .filter(|m| m.text.is_some())
@@ -86,7 +114,11 @@ impl IMAPConnection {
                 return m;
             })
             .map(get_message_body)
-            .collect();
+            .collect());
+    }
+
+    pub fn most_current_id(&self) -> u32 {
+        return self.inbox.exists;
     }
 
     /// waits for new mails to arrive in the inbox using the IMAP IDLE command.

@@ -3,6 +3,9 @@ imap:
   port: 993
   username: "abc" # leave empty to use the environment variable EM_IMAP_USERNAME
   password: "def" # leave empty to use the environment variable EM_IMAP_PASSWORD
+  fetchmode:
+    type: "poll" # "idle" or "poll
+    interval: 25 # in seconds
 interval: 25 # in minutes
 pdf_save_path: "pdfs/"  # path to save the pdfs to, leave empty to not save pdfs.
 printing:
