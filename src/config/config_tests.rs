@@ -1,5 +1,7 @@
 use std::{env, str::FromStr};
 
+use crate::config::config::IMAPModes::{Idle, Poll};
+use crate::config::config::IMAP_IDLE_DEFAULT_INTERVAL;
 use crate::config::Config;
 
 #[cfg(test)]
@@ -12,7 +14,8 @@ fn test_from_str() {
     assert_eq!(config.imap.port, 993);
     assert_eq!(config.imap.username, "abc");
     assert_eq!(config.imap.password, "def");
-    assert_eq!(config.interval, 25);
+    assert_eq!(config.imap.mode.interval, 25);
+    assert_eq!(config.imap.mode.method, Poll);
     assert_eq!(config.printing.min_copies, 2);
     assert_eq!(config.printing.max_copies, Some(5));
     assert_eq!(
@@ -31,7 +34,8 @@ fn test_parse_file() {
     assert_eq!(config.imap.port, 993);
     assert_eq!(config.imap.username, "abc");
     assert_eq!(config.imap.password, "def");
-    assert_eq!(config.interval, 25);
+    assert_eq!(config.imap.mode.interval, 25);
+    assert_eq!(config.imap.mode.method, Poll);
     assert_eq!(config.printing.min_copies, 2);
     assert_eq!(config.printing.max_copies, Some(5));
     assert_eq!(config.printing.additional_copies, Some(1));
@@ -59,7 +63,8 @@ fn test_parse_file_minmal_config() {
     assert_eq!(config.imap.port, 993);
     assert_eq!(config.imap.username, "user"); // as should this
     assert_eq!(config.imap.password, "pass"); // and this
-    assert_eq!(config.interval, 25);
+    assert_eq!(config.imap.mode.interval, IMAP_IDLE_DEFAULT_INTERVAL); // default value, as not set in file
+    assert_eq!(config.imap.mode.method, Idle); // default value, as not set in file
     assert_eq!(config.printing.min_copies, 1);
     assert_eq!(config.printing.max_copies, None);
     assert_eq!(

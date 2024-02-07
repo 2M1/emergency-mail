@@ -1,12 +1,20 @@
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, str::FromStr, time::Duration};
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, Eq, PartialEq)]
 pub enum IMAPModes {
+    #[serde(alias = "idle", alias = "IDLE")]
     #[default]
     Idle,
+    #[serde(alias = "poll", alias = "POLL")]
     Poll,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IMAPModeDescription {
+    pub method: IMAPModes,
+    pub interval: u64, // in minutes or seconds depending on the mode
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,7 +23,8 @@ pub struct IMAPConfig {
     pub port: u16,
     pub username: String,
     pub password: String,
-    pub mode: Option<IMAPModes>,
+    #[serde(default)]
+    pub mode: IMAPModeDescription,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,7 +41,6 @@ pub struct PrintingConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub imap: IMAPConfig,
-    pub interval: u64,
     pub printing: PrintingConfig,
     pub pdf_save_path: Option<String>,
 }
@@ -41,6 +49,7 @@ const ENV_IMAP_HOST: &str = "EM_IMAP_HOST";
 const ENV_IMAP_USERNAME: &str = "EM_IMAP_USERNAME";
 const ENV_IMAP_PASSWORD: &str = "EM_IMAP_PASSWORD";
 const SECONDS_PER_MINUTE: u64 = 60;
+pub const IMAP_IDLE_DEFAULT_INTERVAL: u64 = 29; // as per RFC 2177
 
 impl Config {
     pub fn parse(path: &str) -> Result<Config, String> {
@@ -50,7 +59,25 @@ impl Config {
     }
 
     pub fn interval_as_duration(&self) -> Duration {
-        return Duration::from_secs(self.interval * SECONDS_PER_MINUTE);
+        return self.imap.mode.interval_as_duration();
+    }
+}
+
+impl IMAPModeDescription {
+    pub fn interval_as_duration(&self) -> Duration {
+        match self.method {
+            IMAPModes::Poll => Duration::from_secs(self.interval),
+            IMAPModes::Idle => Duration::from_secs(self.interval * SECONDS_PER_MINUTE),
+        }
+    }
+}
+
+impl Default for IMAPModeDescription {
+    fn default() -> Self {
+        return IMAPModeDescription {
+            method: IMAPModes::Idle,
+            interval: IMAP_IDLE_DEFAULT_INTERVAL,
+        };
     }
 }
 
@@ -68,6 +95,7 @@ impl FromStr for Config {
             return format!("couldn't parse yaml: {}", e);
         })?;
 
+        // imap required field resolution
         if config.imap.host == "" {
             let host = env::var(ENV_IMAP_HOST)
                 .map_err(|_e| format!("couldn't get {} from environment", ENV_IMAP_HOST))?;
@@ -91,6 +119,16 @@ impl FromStr for Config {
             }
         }
 
+        // imap sanity checks
+        if config.imap.mode.interval == 0 {
+            return Err("interval for IMAP mode must be greater than 0".to_string());
+        }
+
+        if config.imap.mode.method == IMAPModes::Idle && config.imap.mode.interval > 29 {
+            return Err("Interval for IDLE outside of RFC 2177 specification!".to_string());
+        }
+
+        // printing sanity checks
         if config.printing.disabled() {
             if cfg!(not(debug_assertions)) && config.pdf_save_path.is_none() {
                 // during debug, a test.pdf file is always saved to the current directory

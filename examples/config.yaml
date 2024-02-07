@@ -3,7 +3,7 @@ imap:
   port: 993
   username: "" # leave empty to use the environment variable EM_IMAP_USERNAME
   password: "" # leave empty to use the environment variable EM_IMAP_PASSWORD
-interval: 25 # in minutes
+# interval: 25 # in minutes
 printing:
   min_copies: 1 # number of duplicate copies to be printed
   printer: "HPE76479 (HP OfficeJet Pro 8020 series)" # "HP_LaserJet_400_M401dn" # printer name // Get names in PS: "Get-Printer | Format-Table -Autosize"
