@@ -5,7 +5,7 @@ use imap::{
     ImapConnection, Session,
 };
 
-use log::{error, info, trace, warn};
+use log::{debug, error, info, trace, warn};
 use native_tls::TlsStream;
 
 use crate::config::Config;
@@ -92,7 +92,7 @@ impl IMAPConnection {
     ///
     pub fn load_since(&mut self, min_id: u32) -> Result<Vec<Option<String>>, ()> {
         let set = format!("{}:*", min_id);
-        trace!("fetching mails with set {}", set);
+        debug!("fetching mails with set {}", set);
         let fetch_res = self.session.fetch(
             set,
             "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",

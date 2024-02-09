@@ -3,7 +3,9 @@ imap:
   port: 993
   username: "" # leave empty to use the environment variable EM_IMAP_USERNAME
   password: "" # leave empty to use the environment variable EM_IMAP_PASSWORD
-interval: 25 # in minutes
+  mode:
+    method: "poll" # "idle" or "poll
+    interval: 25 # in seconds
 pdf_save_path: "pdfs/"  # path to save the pdfs to, leave empty to not save pdfs.
 printing:
   min_copies: 1 # number of duplicate copies to be printed

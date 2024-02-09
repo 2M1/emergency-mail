@@ -19,3 +19,9 @@ Work in progress.
 ## on server
 - ubuntu 22.04
   - usb stick (silver) ist registriert, löschen und evtl. formatieren, so dass er wieder geht :)
+
+## other:
+use .env file:
+```bash
+export $(cat .env | xargs)
+```

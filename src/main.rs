@@ -9,6 +9,7 @@ use config::Config;
 use log::trace;
 use log::{debug, error, info};
 
+use crate::config::config::IMAPModes::Idle;
 use ctrlc;
 
 use crate::connection::imap::IMAPConnection;
@@ -22,13 +23,28 @@ mod connection;
 mod models;
 mod printing;
 
-const EMERGENCY: &str = include_str!("../examples/emergency_bgebg.txt");
+fn poll_new_mails(
+    connection: &mut IMAPConnection,
+    interval: Duration,
+) -> Result<Vec<Option<String>>, ()> {
+    loop {
+        let res = connection.load_new_mails();
+        if res.is_err() || res.as_ref().is_ok_and(|v| !v.is_empty()) {
+            break res; // either we have new mails or an error
+        }
+        sleep(interval);
+    }
+}
 
 fn run_mail_loop(config: &Config) {
     let mut connection = IMAPConnection::connect(config).expect("couldn't connect to imap server");
     info!("Bereit zum Empfangen der Alarmemails.");
     loop {
-        let new_mails = connection.reconnecting_await_new_mail();
+        let new_mails = if config.imap.mode.method == Idle {
+            connection.reconnecting_await_new_mail()
+        } else {
+            poll_new_mails(&mut connection, config.interval_as_duration())
+        };
         if new_mails.is_err() {
             connection.end();
             info!("reconnecting to imap server");
