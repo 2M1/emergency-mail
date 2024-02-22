@@ -1,4 +1,4 @@
-use imap::types::Fetch;
+use imap::types::{Fetch, Seq};
 
 #[cfg(test)]
 use crate::models::emergency::Emergency;
@@ -18,6 +18,7 @@ use std::str::FromStr;
 /// ```
 pub struct Message {
     pub uid: Option<u32>,
+    pub seq: Seq,
     pub header: Option<Vec<u8>>,
     pub text: Option<Vec<u8>>,
 }
@@ -39,6 +40,7 @@ impl Message {
         };
 
         return Message {
+            seq: fetch.message,
             uid: fetch.uid,
             header: header,
             text: text,

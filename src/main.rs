@@ -28,6 +28,7 @@ fn poll_new_mails(
     interval: Duration,
 ) -> Result<Vec<Option<String>>, ()> {
     loop {
+        debug!("polling tick!");
         let res = connection.load_new_mails();
         if res.is_err() || res.as_ref().is_ok_and(|v| !v.is_empty()) {
             break res; // either we have new mails or an error

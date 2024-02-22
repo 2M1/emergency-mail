@@ -11,6 +11,7 @@ const BODY_PLAIN_TEXT: &str = "~~Ort~~Brandenburg an der Havel~~\r\n\r\n\r\n~~Or
 #[test]
 fn test_get_message_body_plain_text() {
     let example = Message {
+        seq: 1,
         uid: Some(1),
         header: Some(HEADER_CONTENT_TYPE.as_bytes().to_vec()),
         text: Some(BODY_PLAIN_TEXT.as_bytes().to_vec()),
@@ -23,6 +24,7 @@ fn test_get_message_body_plain_text() {
 pub fn test_get_message_body_multipart() {
     // the get_message_body function should return the plain text part of the multipart mail
     let example = Message {
+        seq: 1,
         uid: Some(1),
         header: Some(HEADER_CONTENT_TYPE_MULTIPART.as_bytes().to_vec()),
         text: Some(MULTIPART_BODY.as_bytes().to_vec()),

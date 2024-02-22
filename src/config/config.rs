@@ -50,6 +50,7 @@ const ENV_IMAP_USERNAME: &str = "EM_IMAP_USERNAME";
 const ENV_IMAP_PASSWORD: &str = "EM_IMAP_PASSWORD";
 const SECONDS_PER_MINUTE: u64 = 60;
 pub const IMAP_IDLE_DEFAULT_INTERVAL: u64 = 29; // as per RFC 2177
+pub const IMAP_IDLE_MAX_INTERVAL: u64 = 29; // as per RFC 2177
 
 impl Config {
     pub fn parse(path: &str) -> Result<Config, String> {
@@ -124,7 +125,9 @@ impl FromStr for Config {
             return Err("interval for IMAP mode must be greater than 0".to_string());
         }
 
-        if config.imap.mode.method == IMAPModes::Idle && config.imap.mode.interval > 29 {
+        if config.imap.mode.method == IMAPModes::Idle
+            && config.imap.mode.interval > IMAP_IDLE_MAX_INTERVAL
+        {
             return Err("Interval for IDLE outside of RFC 2177 specification!".to_string());
         }
 

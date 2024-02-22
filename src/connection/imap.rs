@@ -35,12 +35,12 @@ impl IMAPConnection {
     /// Connects to the IMAPServer in config, using native OpenSSL (TLS).
     /// It then logs in to the server using the username and password specified in the config and selects the INBOX mailbox.
     pub fn connect(config: &Config) -> Result<Self, String> {
-        let imap_cfg = config.imap.clone();
-        let client = imap::ClientBuilder::new(imap_cfg.host, imap_cfg.port)
+        let imap_cfg = &config.imap;
+        let client = imap::ClientBuilder::new(&imap_cfg.host, imap_cfg.port)
             .connect()
             .map_err(|e| format!("couldn't create imap client: {}", e))?;
         let mut session = client
-            .login(imap_cfg.username, imap_cfg.password)
+            .login(&imap_cfg.username, &imap_cfg.password)
             .map_err(|e| format!("couldn't login to imap server: {}", e.0))?;
 
         let inbox = session
@@ -57,12 +57,14 @@ impl IMAPConnection {
     /// loads the newest mails in the inbox from the server
     ///
     /// # description
-    /// fetches all mails with a uid greater than the current max uid in the inbox.
+    /// fetches all mails with an uid greater than the current max uid in the inbox.
     /// the uid value is transmitted when selecting the inbox in the connect method.
     /// the uid is then updated to the maximum uid of the fetched mails.
     /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
-    #[deprecated(note = "use load_new_mails instead")]
+    #[deprecated(
+        note = "fails with an empty vec, use load_new_mails instead to get a result return"
+    )]
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
         return self.load_since(self.inbox.exists + 1).unwrap_or_else(|e| {
             error!("couldn't load newest mails: {:?}", e);
@@ -73,13 +75,38 @@ impl IMAPConnection {
     /// loads the newest mails in the inbox from the server
     ///
     /// # description
-    /// fetches all mails with a uid greater than the current max uid in the inbox.
+    /// fetches all mails with an uid greater than the current max uid in the inbox.
     /// the uid value is transmitted when selecting the inbox in the connect method.
     /// the uid is then updated to the maximum uid of the fetched mails.
     /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
     pub fn load_new_mails(&mut self) -> Result<Vec<Option<String>>, ()> {
-        return self.load_since(self.inbox.exists + 1);
+        // return self.load_since(self.inbox.exists + 1);
+        let messages = self
+            .session
+            .uid_fetch("*", "(BODY[Header.FIELDS (Content-Type)] FLAGS UID)");
+        if let Err(e) = messages {
+            error!("failed to fetch newest message: {}", e);
+            return Err(());
+        }
+        let messages = messages.unwrap();
+
+        let exists_curr = self.inbox.exists; // must be saved before filter, since it would otherwise be borrowed twice (once mutable in map)
+        if messages
+            .iter()
+            .map(Message::from_fetch)
+            .filter(|m| m.header.is_some())
+            .any(|m| m.seq > exists_curr)
+        {
+            // there is a message with a higher sequence number than the current max seq nr.
+            // unfortunately uid_fetch only fetches the most recent message, so we have to fetch all since last again
+
+            // note: reduces the risk of race conditions with new mails arriving while fetching, because
+            // load since uses an open interval, so it will always fetch all new mails.
+            return self.load_since(exists_curr + 1);
+        }
+
+        return Ok(vec![]);
     }
 
     /// loads the newest mails in the inbox from the server
@@ -110,7 +137,9 @@ impl IMAPConnection {
             .map(|m| {
                 trace!("fetched message: {:?}", m.uid);
                 // set the maximum uid currently seen.
-                self.inbox.exists = max(self.inbox.exists, m.uid.unwrap_or_default());
+
+                self.inbox.exists = max(self.inbox.exists, m.seq);
+
                 return m;
             })
             .map(get_message_body)
@@ -133,8 +162,6 @@ impl IMAPConnection {
         let mut new_max = self.inbox.exists;
 
         let err = idle.wait_while(|response| {
-            trace!("response: {:?}", response);
-
             return match response {
                 UnsolicitedResponse::Exists(exists) => {
                     new_max = max(new_max, exists);
@@ -169,7 +196,7 @@ impl IMAPConnection {
     /// to wait for a dynamically calculated time period, based on the number of errors, before retrying.
     ///
     pub fn reconnecting_await_new_mail(&mut self) -> Result<Vec<Option<String>>, ()> {
-        const MAX_RECONNECTION_ATTEMPTS: u8 = 3; // try to reconnect, but fail rather fast to
+        const MAX_RECONNECTION_ATTEMPTS: u8 = 3; // try to reconnect, but fail rather fast
         let mut init_err_count = 0;
         loop {
             let result = self.await_new_mail();
