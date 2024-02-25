@@ -28,7 +28,7 @@ fn poll_new_mails(
     interval: Duration,
 ) -> Result<Vec<Option<String>>, ()> {
     loop {
-        debug!("polling tick!");
+        trace!("polling tick!");
         let res = connection.load_new_mails();
         if res.is_err() || res.as_ref().is_ok_and(|v| !v.is_empty()) {
             break res; // either we have new mails or an error
@@ -41,6 +41,7 @@ fn run_mail_loop(config: &Config) {
     let mut connection = IMAPConnection::connect(config).expect("couldn't connect to imap server");
     info!("Bereit zum Empfangen der Alarmemails.");
     loop {
+        // todo: move config check out of loop
         let new_mails = if config.imap.mode.method == Idle {
             connection.reconnecting_await_new_mail()
         } else {
@@ -69,7 +70,7 @@ fn run_mail_loop(config: &Config) {
             let mail_str = mail.unwrap(); // will never panic, see check above
             let mail_str = mail_str_decode_unicode(mail_str);
             let ems = Emergency::from_str(mail_str.as_str()).unwrap();
-            debug!("ems: {:?}", ems);
+            debug!("decoded ems id {:?}", ems.emergency_number);
             print_emergency(ems, &config);
         }
     }
@@ -88,7 +89,7 @@ fn main() {
         info!("received SIGINT, exiting.");
         std::process::exit(0);
     })
-    .expect("couldn't set SIGINT handler");
+        .expect("couldn't set SIGINT handler");
 
     /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());

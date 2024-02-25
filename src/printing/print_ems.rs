@@ -94,7 +94,7 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
         ems_dir = Path::new("test.pdf").to_path_buf();
     }
 
-    trace!("saving to: {:?}", &ems_dir);
+    info!("saving to: {:?}", &ems_dir);
     let docref = doc.document;
     let docref = Rc::try_unwrap(docref)
         .map_err(|_| DocumentBuildingError::Error("couldn't unwrap document".to_string()))
@@ -114,7 +114,7 @@ pub(super) fn count_units_from_configured_amt(ems: &Emergency, config: &Config) 
         let Either::Left(unit) = unit else {
             continue;
         };
-        // skipp all units, that do not have a standard radio id (Funkkenner)
+        // skipped all units, that do not have a standard radio id (Funkkenner)
 
         if unit.agency == config.printing.amt && unit.county == "PM" && unit.org == "FL" {
             // NOTE: county and org are hardcoded for now!
@@ -129,6 +129,7 @@ pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
     if let Some(additional_copies) = config.printing.additional_copies {
         count += additional_copies as usize;
     }
+    // adjust for max, min intervals in config:
     count = max(count, config.printing.min_copies as usize);
     if let Some(max_copies) = config.printing.max_copies {
         count = min(count, max_copies as usize);
@@ -431,8 +432,8 @@ fn add_start_column<I>(
     page_units: I,
     bold_count: usize,
 ) -> usize
-where
-    I: Iterator<Item = String>,
+    where
+        I: Iterator<Item=String>,
 {
     page.add_text(label, x_offset, start_y, DrawingAttributes::LABEL);
     return add_column(label.len(), page_units, page, x_offset, start_y, bold_count);
@@ -446,8 +447,8 @@ fn add_column<'a, I>(
     y: f32,
     bold_count: usize,
 ) -> usize
-where
-    I: Iterator<Item = String>,
+    where
+        I: Iterator<Item=String>,
 {
     let mut y = y + points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
     let mut max_len = label_len + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label

@@ -51,7 +51,7 @@ impl Message {
 pub fn mail_str_decode_unicode(str: String) -> String {
     let mut new_str = String::with_capacity(str.len()); // replacing escape sequences can only shrink the string
 
-    // searches for escapesequences of the form =xx=xx where xx are hex digits and replaces them with the corresponding unicode character
+    // searches for escape-sequences of the form =xx=xx where xx are hex digits and replaces them with the corresponding unicode character
     let mut prev_buffer = String::with_capacity(6);
     for c in str.chars() {
         if c != '=' && prev_buffer.is_empty() {
@@ -68,8 +68,16 @@ pub fn mail_str_decode_unicode(str: String) -> String {
         if prev_buffer.len() == 6 {
             let hex_1 = &prev_buffer[1..3];
             let hex_2 = &prev_buffer[4..6];
-            let hex_1 = u8::from_str_radix(&hex_1, 16).unwrap();
-            let hex_2 = u8::from_str_radix(&hex_2, 16).unwrap();
+            let Ok(hex_1) = u8::from_str_radix(&hex_1, 16) else {
+                new_str.push_str(&prev_buffer);
+                prev_buffer.clear();
+                continue;
+            };
+            let Ok(hex_2) = u8::from_str_radix(&hex_2, 16) else {
+                new_str.push_str(&prev_buffer);
+                prev_buffer.clear();
+                continue;
+            };
             let utf8 = String::from_utf8([hex_1, hex_2].to_vec()).unwrap();
 
             // if let Some(comound) = char::from_u32(utf8) {

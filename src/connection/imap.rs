@@ -60,10 +60,10 @@ impl IMAPConnection {
     /// fetches all mails with an uid greater than the current max uid in the inbox.
     /// the uid value is transmitted when selecting the inbox in the connect method.
     /// the uid is then updated to the maximum uid of the fetched mails.
-    /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
+    /// Therefor consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
     #[deprecated(
-        note = "fails with an empty vec, use load_new_mails instead to get a result return"
+    note = "fails with an empty vec, use load_new_mails instead to get a result return"
     )]
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
         return self.load_since(self.inbox.exists + 1).unwrap_or_else(|e| {
@@ -78,7 +78,7 @@ impl IMAPConnection {
     /// fetches all mails with an uid greater than the current max uid in the inbox.
     /// the uid value is transmitted when selecting the inbox in the connect method.
     /// the uid is then updated to the maximum uid of the fetched mails.
-    /// Therefore consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
+    /// Therefor consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
     pub fn load_new_mails(&mut self) -> Result<Vec<Option<String>>, ()> {
         // return self.load_since(self.inbox.exists + 1);
@@ -103,6 +103,7 @@ impl IMAPConnection {
 
             // note: reduces the risk of race conditions with new mails arriving while fetching, because
             // load since uses an open interval, so it will always fetch all new mails.
+            trace!("new mail detected, fetching all new mails");
             return self.load_since(exists_curr + 1);
         }
 
@@ -202,8 +203,7 @@ impl IMAPConnection {
             let result = self.await_new_mail();
             if let Ok(exists) = result {
                 info!("new mail nr: {}", exists);
-                let newest = self.load_newest();
-                return Ok(newest);
+                return self.load_new_mails();
             } else if let Err(e) = result {
                 match e {
                     IMAPIdleError::InitialisationError => {
