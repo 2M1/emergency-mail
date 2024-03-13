@@ -81,7 +81,11 @@ fn main() {
     info!("starting up");
     let config_path = std::env::var("EM_CONFIG").unwrap_or("config.yaml".to_string());
     trace!("config path: {}", config_path);
-    let config = Config::parse(&config_path).expect("couldn't parse config");
+    let config = Config::parse(&config_path);
+    let Ok(config) = config else {
+        error!("couldn't parse config file: {}", config.unwrap_err());
+        return;
+    };
 
     com::init().unwrap();
 

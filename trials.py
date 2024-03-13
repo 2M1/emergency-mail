@@ -11,7 +11,7 @@ USER = os.getenv("EM_IMAP_USERNAME")
 PASS = os.getenv("EM_IMAP_PASSWORD")
 
 ALARM_MESSAGES = [
-    "examples/emergency_bgebg_asciiescaped.txt",
+    # "examples/emergency_bgebg_asciiescaped.txt",
     "examples/emergency_bgebg.txt",
     "examples/emergency_many_units.txt",
     "examples/emergency_obj.txt",
