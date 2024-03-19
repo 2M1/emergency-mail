@@ -17,11 +17,13 @@ use crate::connection::message::mail_str_decode_unicode;
 use crate::models::emergency::Emergency;
 use crate::printing::com;
 use crate::printing::print_ems::print_emergency;
+use crate::winprio::set_process_priority;
 
 mod config;
 mod connection;
 mod models;
 mod printing;
+mod winprio;
 
 fn poll_new_mails(
     connection: &mut IMAPConnection,
@@ -92,8 +94,9 @@ fn main() {
     ctrlc::set_handler(move || {
         info!("received SIGINT, exiting.");
         std::process::exit(0);
-    })
-        .expect("couldn't set SIGINT handler");
+    }).expect("couldn't set SIGINT handler");
+
+    set_process_priority();
 
     /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
