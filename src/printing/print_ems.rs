@@ -216,7 +216,7 @@ fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
         DrawingAttributes::FIELD_VALUE,
     );
 
-    let time_str = ems.alarm_time.format("%d.%m.%y\n%H:%M").to_string(); // NOTE: seconds are not transmitted in the mail
+    let time_str = ems.alarm_time.format("%d.%m.%Y\n%H:%M").to_string(); // NOTE: seconds are not transmitted in the mail
     page.add_multiline_text(time_str, 106.0, 32.0, DrawingAttributes::FIELD_VALUE);
 
     page.add_multiline_text(
@@ -432,8 +432,8 @@ fn add_start_column<I>(
     page_units: I,
     bold_count: usize,
 ) -> usize
-    where
-        I: Iterator<Item=String>,
+where
+    I: Iterator<Item = String>,
 {
     page.add_text(label, x_offset, start_y, DrawingAttributes::LABEL);
     return add_column(label.len(), page_units, page, x_offset, start_y, bold_count);
@@ -447,8 +447,8 @@ fn add_column<'a, I>(
     y: f32,
     bold_count: usize,
 ) -> usize
-    where
-        I: Iterator<Item=String>,
+where
+    I: Iterator<Item = String>,
 {
     let mut y = y + points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
     let mut max_len = label_len + 3; //  3 looks good :), with 0 all labels would be written as if they were a single long label

@@ -63,7 +63,7 @@ impl IMAPConnection {
     /// Therefor consecutive calls to this method will only fetch new mails and *should not* fetch the same message twice.
     ///
     #[deprecated(
-    note = "fails with an empty vec, use load_new_mails instead to get a result return"
+        note = "fails with an empty vec, use load_new_mails instead to get a result return"
     )]
     pub fn load_newest(&mut self) -> Vec<Option<String>> {
         return self.load_since(self.inbox.exists + 1).unwrap_or_else(|e| {
@@ -84,9 +84,9 @@ impl IMAPConnection {
         // return self.load_since(self.inbox.exists + 1);
         let messages = self
             .session
-            .uid_fetch("*", "(BODY[Header.FIELDS (Content-Type)] FLAGS UID)");
+            .uid_fetch("12345:*", "(BODY[Header.FIELDS (Content-Type)] FLAGS UID)");
         if let Err(e) = messages {
-            error!("failed to fetch newest message: {}", e);
+            error!("failed to fetch newest message (uid set): {}", e);
             return Err(());
         }
         let messages = messages.unwrap();

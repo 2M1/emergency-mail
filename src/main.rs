@@ -98,6 +98,7 @@ fn main() {
 
     set_process_priority();
 
+
     /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
     let ems = Emergency::from_str(ems.as_str()).unwrap();

@@ -102,7 +102,7 @@ pub fn get_message_body(message: Message) -> Option<String> {
             if content_type.contains("multipart/alternative") {
                 return extract_multipart_plain_text(&content);
             }
-            if content_type.trim() == "text/plain" {
+            if content_type.contains("text/plain") {
                 // plain text mail
                 return Some(content);
             }
