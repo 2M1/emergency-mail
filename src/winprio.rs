@@ -1,11 +1,15 @@
-use windows::Win32::System::Threading::SetPriorityClass;
+#[cfg(target_os = "windows")]
 use windows::Win32::System::Threading::GetCurrentProcess;
-
+#[cfg(target_os = "windows")]
+use windows::Win32::System::Threading::SetPriorityClass;
 
 #[cfg(target_os = "windows")]
 pub fn set_process_priority() {
     let res = unsafe {
-        SetPriorityClass(GetCurrentProcess(), windows::Win32::System::Threading::REALTIME_PRIORITY_CLASS)
+        SetPriorityClass(
+            GetCurrentProcess(),
+            windows::Win32::System::Threading::REALTIME_PRIORITY_CLASS,
+        )
     };
 
     if res.as_bool() {
@@ -16,6 +20,6 @@ pub fn set_process_priority() {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn set_priority() {
+pub fn set_process_priority() {
     log::trace!("Setting process priority is not implemented on this platform");
 }

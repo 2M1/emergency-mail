@@ -94,10 +94,10 @@ fn main() {
     ctrlc::set_handler(move || {
         info!("received SIGINT, exiting.");
         std::process::exit(0);
-    }).expect("couldn't set SIGINT handler");
+    })
+    .expect("couldn't set SIGINT handler");
 
     set_process_priority();
-
 
     /* let ems = include_str!("../examples/emergency_many_units.txt");
     let ems = mail_str_decode_unicode(ems.to_string());
