@@ -1,4 +1,5 @@
 use imap::types::{Fetch, Seq};
+use log::trace;
 
 #[cfg(test)]
 use crate::models::emergency::Emergency;
@@ -48,22 +49,36 @@ impl Message {
     }
 }
 
-pub fn mail_str_decode_unicode(str: String) -> String {
+pub fn mail_str_decode_unicode(str: &str) -> String {
     let mut new_str = String::with_capacity(str.len()); // replacing escape sequences can only shrink the string
 
     // searches for escape-sequences of the form =xx=xx where xx are hex digits and replaces them with the corresponding unicode character
     let mut prev_buffer = String::with_capacity(6);
-    for c in str.chars() {
+    let mut chars = str.chars().peekable();
+
+    while let Some(c) = chars.next() {
         if c != '=' && prev_buffer.is_empty() {
             new_str.push(c);
             continue;
         }
+
+        if prev_buffer.len() == 1 && c == '\r' {
+            // remove newlines, which are escaped with a single '='
+            prev_buffer.clear();
+            if chars.peek() == Some(&'\n') {
+                chars.next(); // skip the \n character
+            }
+            trace!("found newline escape sequence");
+            continue;
+        }
+
         if c != '=' && !c.is_ascii_hexdigit() {
             new_str.push_str(&prev_buffer);
             new_str.push(c);
             prev_buffer.clear();
             continue;
         }
+
         prev_buffer.push(c);
         if prev_buffer.len() == 6 {
             let hex_1 = &prev_buffer[1..3];
@@ -92,61 +107,39 @@ pub fn mail_str_decode_unicode(str: String) -> String {
 #[test]
 fn test_mail_str_decode_unicode_simple() {
     // testing required unicode characters:
-    assert_eq!(
-        mail_str_decode_unicode("=C3=A4".to_string()),
-        "ä".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=A4=C3=A4".to_string()),
-        "ää".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=B6".to_string()),
-        "ö".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=BC".to_string()),
-        "ü".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=9F".to_string()),
-        "ß".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=84".to_string()),
-        "Ä".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=96".to_string()),
-        "Ö".to_string()
-    );
-    assert_eq!(
-        mail_str_decode_unicode("=C3=9C".to_string()),
-        "Ü".to_string()
-    );
+    assert_eq!(mail_str_decode_unicode("=C3=A4"), "ä");
+    assert_eq!(mail_str_decode_unicode("=C3=A4=C3=A4"), "ää");
+    assert_eq!(mail_str_decode_unicode("=C3=B6"), "ö");
+    assert_eq!(mail_str_decode_unicode("=C3=BC"), "ü");
+    assert_eq!(mail_str_decode_unicode("=C3=9F"), "ß");
+    assert_eq!(mail_str_decode_unicode("=C3=84"), "Ä");
+    assert_eq!(mail_str_decode_unicode("=C3=96"), "Ö");
+    assert_eq!(mail_str_decode_unicode("=C3=9C"), "Ü");
 
     // testing with other characters:
     assert_eq!(
-        "the quick brown fox jumps over the lazy dog.".to_string(),
-        mail_str_decode_unicode("the quick brown fox jumps over the lazy dog.".to_string())
+        "the quick brown fox jumps over the lazy dog.",
+        mail_str_decode_unicode("the quick brown fox jumps over the lazy dog.")
     );
     assert_eq!(
-        "the qüick brown fox jumps over the lazy dog.".to_string(),
-        mail_str_decode_unicode("the q=C3=BCick brown fox jumps over the lazy dog.".to_string())
+        "the qüick brown fox jumps over the lazy dog.",
+        mail_str_decode_unicode("the q=C3=BCick brown fox jumps over the lazy dog.")
     );
 
     // test incomplete (should be unchanged):
     assert_eq!(
-        "the q=C3=Bick brown fox jumps over the lazy dog.".to_string(), // =C3=B is an incomplete escape sequence (should assume it is a normal sequence of characters)
-        mail_str_decode_unicode("the q=C3=Bick brown fox jumps over the lazy dog.".to_string())
+        "the q=C3=Bick brown fox jumps over the lazy dog.", // =C3=B is an incomplete escape sequence (should assume it is a normal sequence of characters)
+        mail_str_decode_unicode("the q=C3=Bick brown fox jumps over the lazy dog.")
     );
+
+    assert_eq!("testa", mail_str_decode_unicode("test=\na"));
 }
 
 #[test]
 fn test_mail_str_decode_unicode_full() {
     // testing with full mail:
     let mail = include_str!("../../examples/emergency_bgebg_asciiescaped.txt");
-    let mail = mail_str_decode_unicode(mail.to_string());
+    let mail = mail_str_decode_unicode(mail);
     let orig = include_str!("../../examples/emergency_bgebg.txt");
 
     let ems_mail = Emergency::from_str(mail.as_str()).unwrap();

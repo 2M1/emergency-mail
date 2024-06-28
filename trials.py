@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import smtplib
 import ssl
 import os
@@ -14,16 +15,16 @@ ALARM_MESSAGES = [
     # "examples/emergency_bgebg_asciiescaped.txt",
     "examples/emergency_bgebg.txt",
     "examples/emergency_many_units.txt",
-    "examples/emergency_obj.txt",
-    "examples/emergency_r1n1f.txt",
-    "examples/emergency_simple.txt",
+#    "examples/emergency_obj.txt",
+#    "examples/emergency_r1n1f.txt",
+#    "examples/emergency_simple.txt",
 ]
 
 
 def establish_connection() -> smtplib.SMTP_SSL:
     print(f"Connecting to server as {USER} on {HOST}:{PORT}")
-    context = ssl.create_default_context()
-    server = smtplib.SMTP_SSL(HOST, PORT, context=context)
+    context = ssl._create_unverified_context()
+    server = smtplib.SMTP_SSL(host=HOST, port=PORT, context=context)
     server.ehlo()
     server.login(USER, PASS)
     print("Logged in")

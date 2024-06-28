@@ -49,7 +49,7 @@ fn run_mail_loop(config: &Config) {
         } else {
             poll_new_mails(&mut connection, config.interval_as_duration())
         };
-        if new_mails.is_err() {
+        let Ok(new_mails) = new_mails else {
             connection.end();
             info!("reconnecting to imap server");
             let reconnection = IMAPConnection::connect(config);
@@ -60,17 +60,22 @@ fn run_mail_loop(config: &Config) {
             info!("Bereit zum Empfangen der Alarmemails.");
             connection = reconnection.unwrap(); // will never panic, see check above
             continue;
-        }
-        let new_mails = new_mails.unwrap(); // will never panic, see check above
+        };
 
         for mail in new_mails {
-            if mail.is_none() {
+            let Some(mail_str) = mail else {
                 debug!("mail is none");
                 continue;
-            }
+            };
 
-            let mail_str = mail.unwrap(); // will never panic, see check above
-            let mail_str = mail_str_decode_unicode(mail_str);
+            let mail_str = mail_str_decode_unicode(mail_str.as_str());
+            trace!("decoded mail: {}", mail_str);
+            #[cfg(debug_assertions)]
+            {
+                use std::fs::write;
+                write("debug_message_escaped.txt", mail_str.as_str())
+                    .expect("couldn't write debug message");
+            }
             let ems = Emergency::from_str(mail_str.as_str()).unwrap();
             debug!("decoded ems id {:?}", ems.emergency_number);
             print_emergency(ems, &config);

@@ -75,6 +75,8 @@ fn headers_get_content_type(headers: Vec<u8>) -> Option<String> {
     return None;
 }
 
+const DEBUG_MESSAGE_FILE: &str = "debug_message.txt";
+
 pub fn get_message_body(message: Message) -> Option<String> {
     let Some(body) = message.text else {
         error!(
@@ -94,6 +96,12 @@ pub fn get_message_body(message: Message) -> Option<String> {
         return None;
     };
     trace!("got mail body: {}", content);
+
+    #[cfg(debug_assertions)]
+    {
+        use std::fs::write;
+        write(DEBUG_MESSAGE_FILE, content.clone()).unwrap();
+    }
 
     if let Some(headers) = message.header {
         let content_type = headers_get_content_type(headers);
