@@ -132,7 +132,7 @@ fn test_mail_str_decode_unicode_simple() {
         mail_str_decode_unicode("the q=C3=Bick brown fox jumps over the lazy dog.")
     );
 
-    assert_eq!("testa", mail_str_decode_unicode("test=\na"));
+    assert_eq!("testa", mail_str_decode_unicode("test=\r\na"));
 }
 
 #[test]
