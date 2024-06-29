@@ -5,7 +5,7 @@ use std::{
 };
 
 use chrono::NaiveDateTime;
-use log::{debug, info, trace, warn};
+use log::{debug, trace, warn};
 
 use crate::models::{
     either::Either, radio_identifier::RadioIdentifier, unit_alarm_time::UnitAlarmTime,
@@ -108,7 +108,6 @@ struct AlarmTableIndices {
 impl FromStr for Emergency {
     type Err = String;
 
-    // #[no_panic]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut ems = Emergency::default();
         let mut line_nr = 1; // line numbers start at 1 (not 0!!!, lol)

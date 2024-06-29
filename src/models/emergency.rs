@@ -95,12 +95,12 @@ impl Emergency {
     }
 
     pub fn get_obj_description(&self) -> Option<String> {
-        if self.object.is_none() {
+        let Some(object) = &self.object else {
             return None;
-        }
+        };
 
         let mut s = String::new();
-        s.push_str(&self.object.as_ref().unwrap());
+        s.push_str(object.as_ref());
         s.push_str("\n");
         let mut part = false;
         if let Some(o) = &self.object_part {

@@ -1,4 +1,4 @@
-use std::{cmp::max, net::TcpStream, time::Duration};
+use std::{cmp::max, time::Duration};
 
 use imap::{
     types::{Mailbox, UnsolicitedResponse},
@@ -6,7 +6,6 @@ use imap::{
 };
 
 use log::{debug, error, info, trace, warn};
-use native_tls::TlsStream;
 
 use crate::config::Config;
 
@@ -85,11 +84,14 @@ impl IMAPConnection {
         let messages = self
             .session
             .uid_fetch("12345:*", "(BODY[Header.FIELDS (Content-Type)] FLAGS UID)");
-        if let Err(e) = messages {
-            error!("failed to fetch newest message (uid set): {}", e);
-            return Err(());
-        }
-        let messages = messages.unwrap();
+
+        let messages = match messages {
+            Err(e) => {
+                error!("failed to fetch newest message (uid set): {}", e);
+                return Err(());
+            }
+            Ok(messages) => messages,
+        };
 
         let exists_curr = self.inbox.exists; // must be saved before filter, since it would otherwise be borrowed twice (once mutable in map)
         if messages
@@ -125,12 +127,15 @@ impl IMAPConnection {
             set,
             "(BODY[Header.FIELDS (Content-Type)] FLAGS UID BODY[TEXT])",
         );
-        if let Err(e) = fetch_res {
-            error!("couldn't fetch new mails: {}", e);
-            return Err(());
-        }
 
-        let messages = fetch_res.unwrap(); // will never panic, see check above
+        let messages = match fetch_res {
+            Err(e) => {
+                error!("couldn't fetch new mails: {}", e);
+                return Err(());
+            }
+            Ok(messages) => messages,
+        };
+
         return Ok(messages
             .iter()
             .map(Message::from_fetch)

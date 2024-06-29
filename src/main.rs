@@ -53,12 +53,12 @@ fn run_mail_loop(config: &Config) {
             connection.end();
             info!("reconnecting to imap server");
             let reconnection = IMAPConnection::connect(config);
-            if reconnection.is_err() {
+            let Ok(reconnection) = reconnection else {
                 error!("couldn't reconnect to imap server");
                 return;
-            }
-            info!("Bereit zum Empfangen der Alarmemails.");
-            connection = reconnection.unwrap(); // will never panic, see check above
+            };
+            info!("bereit zum empfangen der alarmemails.");
+            connection = reconnection; // will never panic, see check above
             continue;
         };
 
