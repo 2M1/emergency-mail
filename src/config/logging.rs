@@ -31,14 +31,14 @@ const FILE_LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 /// @see [https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html](https://docs.rs/log4rs/1.2.0/log4rs/encode/pattern/index.html)
 const LOG_PATTERN: &'static str = "{d(%Y-%m-%d %H:%M:%S)} {l}: [{f}:{L}] - {h({m}{n})}";
 
-pub fn init_logging() -> Handle {
+pub fn init_logging() -> Result<Handle, String> {
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new(LOG_PATTERN)))
         .build();
 
     let window_roller = FixedWindowRoller::builder()
         .build("logs/emergency_mails_{}.log", MAX_LOG_COUNT)
-        .unwrap();
+        .map_err(|e| e.to_string())?;
 
     let size_trigger = SizeTrigger::new(MAX_LOG_SIZE);
     let policy = CompoundPolicy::new(Box::new(size_trigger), Box::new(window_roller));
@@ -68,5 +68,5 @@ pub fn init_logging() -> Handle {
         )
         .unwrap();
 
-    return log4rs::init_config(config).unwrap();
+    return Ok(log4rs::init_config(config).map_err(|e| e.to_string())?);
 }

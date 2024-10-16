@@ -6,6 +6,8 @@ use crate::models::emergency::Emergency;
 #[cfg(test)]
 use std::str::FromStr;
 
+use std::str;
+
 /// Message represents a mail message.
 ///
 /// It is used to store the id, header and text of a mail message.
@@ -49,6 +51,7 @@ impl Message {
     }
 }
 
+// for encoding see: https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html
 pub fn mail_str_decode_unicode(str: &str) -> String {
     let mut new_str = String::with_capacity(str.len()); // replacing escape sequences can only shrink the string
 
@@ -63,7 +66,7 @@ pub fn mail_str_decode_unicode(str: &str) -> String {
         }
 
         if prev_buffer.len() == 1 && c == '\r' {
-            // remove newlines, which are escaped with a single '='
+            // remove soft linebreaks, which are escaped with a single '='
             prev_buffer.clear();
             if chars.peek() == Some(&'\n') {
                 chars.next(); // skip the \n character
@@ -93,10 +96,15 @@ pub fn mail_str_decode_unicode(str: &str) -> String {
                 prev_buffer.clear();
                 continue;
             };
-            let utf8 = String::from_utf8([hex_1, hex_2].to_vec()).unwrap();
+            let utf_codepoints = &[hex_1, hex_2].to_vec();
+            let utf8 = str::from_utf8(utf_codepoints);
 
+            if let Ok(utf8) = utf8 {
+                new_str.push_str(&utf8);
+            } else {
+                new_str.push('�');
+            }
             // if let Some(comound) = char::from_u32(utf8) {
-            new_str.push_str(utf8.as_str());
             // }
             prev_buffer.clear();
         }
@@ -115,6 +123,7 @@ fn test_mail_str_decode_unicode_simple() {
     assert_eq!(mail_str_decode_unicode("=C3=84"), "Ä");
     assert_eq!(mail_str_decode_unicode("=C3=96"), "Ö");
     assert_eq!(mail_str_decode_unicode("=C3=9C"), "Ü");
+    assert_eq!(mail_str_decode_unicode("=F4=90"), "�");
 
     // testing with other characters:
     assert_eq!(

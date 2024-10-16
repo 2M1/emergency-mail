@@ -1,6 +1,6 @@
 use super::message::Message;
 
-use log::{error, trace, warn};
+use log::{debug, error, trace, warn};
 
 /// Extracts the plain text from a multipart mail.
 ///
@@ -65,10 +65,16 @@ fn headers_get_content_type(headers: Vec<u8>) -> Option<String> {
     };
 
     let headers = headers.split("\r\n");
+    const HEADER_CONTENT_TRANSFER_ENCODING: &str = "Content-transfer-encoding: ";
     for header in headers {
         if header.starts_with(HEADER_CONTENT_TYPE) {
             let content_type = header[HEADER_CONTENT_TYPE.len()..].to_string();
+            debug!("content type of new message: {}", header);
             return Some(content_type);
+        }
+        if header.starts_with(HEADER_CONTENT_TRANSFER_ENCODING) {
+            let encoding = header[HEADER_CONTENT_TRANSFER_ENCODING.len()..].to_string();
+            debug!("content transfer encoding of new message: {}", encoding);
         }
     }
 
@@ -85,6 +91,8 @@ pub fn get_message_body(message: Message) -> Option<String> {
         );
         return None;
     };
+
+    // TODO: add decoding step here?
 
     let content = String::from_utf8(body.to_vec()).map_err(|_| {
         error!(
