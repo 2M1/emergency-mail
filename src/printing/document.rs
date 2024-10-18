@@ -121,7 +121,7 @@ pub trait PageBuilder {
 
     fn add_horizontal_divider(&mut self, y: f32);
 
-    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize);
+    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: f32, height: f32);
 }
 
 pub trait Printable {

@@ -337,3 +337,5 @@ venv/
 ENV/
 *.pyc
 
+# Debug:
+debug_*.txt

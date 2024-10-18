@@ -141,7 +141,7 @@ pub(super) fn count_copies(ems: &Emergency, config: &Config) -> usize {
 fn add_emergency_header_section(ems: &Emergency, page: &mut dyn PageBuilder) {
     // create header blocks
 
-    page.add_img(LOGO, 142.0, 41.5, 200, 200);
+    page.add_img(LOGO, 142.0, 41.5, 200.0, 200.0);
 
     page.add_outline_polygon(
         &[

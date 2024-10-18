@@ -2,7 +2,7 @@ use std::{cell::RefCell, io::Cursor, rc::Weak};
 
 use printpdf::{
     image_crate::codecs, Color, Image, ImageTransform, IndirectFontRef, Line, Mm,
-    PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Rgb,
+    PdfDocumentReference, PdfLayer, PdfLayerIndex, PdfLayerReference, PdfPageIndex, Rgb,
 };
 
 use crate::{
@@ -16,12 +16,12 @@ pub struct PDFPage {
     pub(super) nr: PdfPageIndex,
     pub(super) document: Weak<RefCell<PdfDocumentReference>>,
     pub(super) layer: PdfLayerIndex,
-    dimensions: (f64, f64),
+    dimensions: (f32, f32),
     fonts: Vec<IndirectFontRef>,
 }
 
-pub const MARGIN_HORIZONTAL: f64 = 15.0;
-pub const MARGIN_VERTICAL: f64 = 20.0;
+pub const MARGIN_HORIZONTAL: f32 = 15.0;
+pub const MARGIN_VERTICAL: f32 = 20.0;
 /// the height of one line in pts
 /// use the [point_to_mm!()] macro to convert to mm
 
@@ -33,7 +33,7 @@ impl PDFPage {
         index: PdfPageIndex,
         doc: Weak<RefCell<PdfDocumentReference>>,
         layer1: PdfLayerIndex,
-        dimens: (f64, f64),
+        dimens: (f32, f32),
     ) -> Self {
         let page = Self {
             nr: index,
@@ -67,6 +67,16 @@ impl PDFPage {
         }
         return self.fonts[if bold { 1 } else { 0 }].clone();
     }
+
+    fn get_current_layer(&mut self) -> PdfLayerReference {
+        return self
+            .document
+            .upgrade()
+            .unwrap()
+            .borrow()
+            .get_page(self.nr)
+            .get_layer(self.layer);
+    }
 }
 
 impl PageBuilder for PDFPage {
@@ -96,28 +106,24 @@ impl PageBuilder for PDFPage {
 
     fn add_outline_polygon(&mut self, points: &[Point], attributes: DrawingAttributes) {
         let height = self.get_dimnensions().1;
-        let points = points.iter().map(|p| {
-            (
-                // Points y needs to be inverted, because the printpdf crate uses the bottom left corner as origin not the top left.
-                printpdf::Point::new(Mm(p.x.into()), Mm((height - p.y).into())),
-                false,
-            )
-        });
-        let mut line = Line::from_iter(points);
-        line.set_closed(true);
-        line.set_stroke(true);
-        line.set_fill(false);
+        let points = points
+            .iter()
+            .map(|p| {
+                (
+                    // Points y needs to be inverted, because the printpdf crate uses the bottom left corner as origin not the top left.
+                    printpdf::Point::new(Mm(p.x.into()), Mm((height - p.y).into())),
+                    false,
+                )
+            })
+            .collect();
+        let mut line = Line {
+            points: points,
+            is_closed: true,
+        };
+        let layer = self.get_current_layer();
 
-        let layer = self
-            .document
-            .upgrade()
-            .unwrap()
-            .borrow()
-            .get_page(self.nr)
-            .get_layer(self.layer);
-
-        layer.set_outline_thickness(line_thickness!(attributes) as f64);
-        layer.add_shape(line);
+        layer.set_outline_thickness(line_thickness!(attributes));
+        layer.add_line(line);
     }
 
     fn add_text(&mut self, text: &str, x: f32, y: f32, attributes: DrawingAttributes) {
@@ -129,9 +135,9 @@ impl PageBuilder for PDFPage {
 
         layer.use_text(
             text,
-            font_size!(attributes) as f64,
-            Mm(x as f64),
-            Mm(self.dimensions.1 - y as f64),
+            font_size!(attributes),
+            Mm(x),
+            Mm(self.dimensions.1 - y),
             &font,
         );
     }
@@ -166,9 +172,9 @@ impl PageBuilder for PDFPage {
 
         layer.begin_text_section();
 
-        let font_size = font_size!(attributes) as f64;
+        let font_size = font_size!(attributes);
         layer.set_font(&font, font_size);
-        layer.set_text_cursor(Mm(x as f64), Mm(self.dimensions.1 - y as f64));
+        layer.set_text_cursor(Mm(x), Mm(self.dimensions.1 - y));
         layer.set_line_height(font_size + 1.0);
 
         let mut curr_y = y;
@@ -194,7 +200,7 @@ impl PageBuilder for PDFPage {
         return true;
     }
 
-    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: usize, height: usize) {
+    fn add_img(&mut self, content: &[u8], x: f32, y: f32, width: f32, height: f32) {
         let doc = self.document.upgrade().unwrap();
         let doc = doc.borrow();
 
@@ -202,17 +208,16 @@ impl PageBuilder for PDFPage {
         let cursor = Cursor::new(content);
         let image = Image::try_from(codecs::bmp::BmpDecoder::new(cursor).unwrap()).unwrap();
 
-        let (width, height) = (width as f64, height as f64);
-        let (original_w, original_h) = (image.image.width.0 as f64, image.image.height.0 as f64);
+        let (original_w, original_h) = (image.image.width.0, image.image.height.0);
 
         image.add_to_layer(
             layer,
             ImageTransform {
                 rotate: None,
-                translate_x: Some(Mm(x as f64)),
-                translate_y: Some(Mm(self.dimensions.1 - y as f64)),
-                scale_x: Some(width / original_w),
-                scale_y: Some(height / original_h),
+                translate_x: Some(Mm(x)),
+                translate_y: Some(Mm(self.dimensions.1 - y)),
+                scale_x: Some(width / original_w as f32),
+                scale_y: Some(height / original_h as f32),
                 ..Default::default()
             },
         );

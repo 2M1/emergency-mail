@@ -104,10 +104,10 @@ fn main() {
 
     set_process_priority();
 
-    /* let ems = include_str!("../examples/emergency_many_units.txt");
-    let ems = mail_str_decode_unicode(ems.to_string());
+    let ems = include_str!("../examples/emergency_many_units.txt");
+    let ems = mail_str_decode_unicode(ems);
     let ems = Emergency::from_str(ems.as_str()).unwrap();
-    print_emergency(ems, &config);*/
+    print_emergency(ems, &config);
     let mut is_first = true;
     loop {
         let res = catch_unwind(|| run_mail_loop(&config)); // catch panics and restart
