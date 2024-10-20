@@ -14,7 +14,7 @@ chrono = "0.4.34"
 log = "0.4.20"
 log4rs = "1.2.0"
 ctrlc = "3.4.2"
-anyhow = "1.0.86"
+anyhow = "1.0.90"
 
 [dependencies.printpdf]
 version = "0.7.0"
