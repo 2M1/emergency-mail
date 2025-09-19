@@ -11,19 +11,19 @@ where
     E: Default,
 {
     pub fn to_lenient_result(self) -> Result<T, E> {
-        match self {
+        return match self {
             Recoverable::Ok(value) => Ok(value),
             Recoverable::Unrecoverable(error) => Err(error),
             Recoverable::Recoverable(value) => Ok(value),
-        }
+        };
     }
 
     pub fn to_result(self) -> Result<T, E> {
-        match self {
+        return match self {
             Recoverable::Ok(value) => Ok(value),
             Recoverable::Unrecoverable(error) => Err(error),
             Recoverable::Recoverable(_value) => Err(E::default()),
-        }
+        };
     }
 }
 

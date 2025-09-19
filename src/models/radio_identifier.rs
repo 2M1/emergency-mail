@@ -48,14 +48,14 @@ impl FromStr for RadioIdentifier {
 
         let number = in_stream
             .by_ref()
-            .take_while(|c| c.is_numeric())
+            .take_while(|c| return c.is_numeric())
             .collect::<String>()
             .parse::<u32>()
             .map_err(|e| {
-                format!(
+                return format!(
                     "Failed to parse RadioIdentifier {} at engine number: {}",
                     s, e
-                )
+                );
             })?;
 
         if in_stream.any(|c| !c.is_whitespace()) {
@@ -77,11 +77,11 @@ impl FromStr for RadioIdentifier {
 
 impl Display for RadioIdentifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
+        return write!(
             f,
             "{} {} {:02}/{:02}-{:02}",
             self.org, self.county, self.agency, self.engine_type, self.number
-        )
+        );
     }
 }
 

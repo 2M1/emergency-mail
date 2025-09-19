@@ -27,7 +27,7 @@ impl PDFDocument {
 
         let document = Rc::new(RefCell::new(document));
 
-        Self {
+        return Self {
             document: document.clone(),
             pages: vec![PDFPage::new(
                 p1,
@@ -36,13 +36,13 @@ impl PDFDocument {
                 (A4_WIDTH.into(), A4_HEIGHT.into()),
             )],
             first: true,
-        }
+        };
     }
 }
 
 impl DocumentBuilder for PDFDocument {
     fn begin(&mut self) -> Result<(), document::DocumentBuildingError> {
-        Ok(())
+        return Ok(());
     }
 
     fn new_page(&mut self) -> Result<usize, document::DocumentBuildingError> {
@@ -72,6 +72,6 @@ impl DocumentBuilder for PDFDocument {
         return self
             .pages
             .get_mut(index)
-            .map(|page| page as &mut dyn document::PageBuilder);
+            .map(|page| return page as &mut dyn document::PageBuilder);
     }
 }

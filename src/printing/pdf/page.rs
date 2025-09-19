@@ -109,11 +109,11 @@ impl PageBuilder for PDFPage {
         let points = points
             .iter()
             .map(|p| {
-                (
+                return (
                     // Points y needs to be inverted, because the printpdf crate uses the bottom left corner as origin not the top left.
                     printpdf::Point::new(Mm(p.x.into()), Mm((height - p.y).into())),
                     false,
-                )
+                );
             })
             .collect();
         let mut line = Line {

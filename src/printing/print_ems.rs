@@ -97,7 +97,7 @@ pub fn print_emergency(ems: Emergency, config: &Config) {
     info!("saving to: {:?}", &ems_dir);
     let docref = doc.document;
     let docref = Rc::try_unwrap(docref)
-        .map_err(|_| DocumentBuildingError::Error("couldn't unwrap document".to_string()))
+        .map_err(|_| return DocumentBuildingError::Error("couldn't unwrap document".to_string()))
         .unwrap()
         .into_inner();
     let file = fs::File::create(&ems_dir).unwrap();
@@ -298,8 +298,8 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: 
         add_column(
             0,
             page_units.iter().map(|u| match &u.unit_id {
-                Either::Left(id) => id.to_string(),
-                Either::Right(id) => id.clone(),
+                Either::Left(id) => return id.to_string(),
+                Either::Right(id) => return id.clone(),
             }),
             page,
             LABEL_OFFSET,
@@ -310,7 +310,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: 
         // create column 2 (wache):
         add_column(
             0,
-            page_units.iter().map(|u| u.station.clone()),
+            page_units.iter().map(|u| return u.station.clone()),
             page,
             offsets.station,
             curr_y,
@@ -320,7 +320,7 @@ fn create_emergency_doc(ems: &Emergency, doc: &mut dyn DocumentBuilder, config: 
         // create column 3 (alarm time):
         add_column(
             0,
-            page_units.iter().map(|u| u.alarm_time.clone()),
+            page_units.iter().map(|u| return u.alarm_time.clone()),
             page,
             offsets.time,
             curr_y,
@@ -393,8 +393,8 @@ fn create_unit_table(
         LABEL_OFFSET,
         start_y,
         page_units.iter().map(|u| match &u.unit_id {
-            Either::Left(id) => id.to_string(),
-            Either::Right(id) => id.clone(),
+            Either::Left(id) => return id.to_string(),
+            Either::Right(id) => return id.clone(),
         }),
         home_count,
     );
@@ -406,7 +406,7 @@ fn create_unit_table(
         "Wache",
         offsets.station,
         start_y,
-        page_units.iter().map(|u| u.station.clone()),
+        page_units.iter().map(|u| return u.station.clone()),
         home_count,
     );
     offsets.time = offsets.station + CHAR_WIDTH_40 * max_len as f32 + 8.0;
@@ -417,7 +417,7 @@ fn create_unit_table(
         "Alarmzeit",
         offsets.time,
         start_y,
-        page_units.iter().map(|u| u.alarm_time.clone()),
+        page_units.iter().map(|u| return u.alarm_time.clone()),
         home_count,
     );
 
@@ -469,5 +469,5 @@ where
         max_len = max(max_len, value.len());
         y += points_to_mm!(text_line_height!(DrawingAttributes::FIELD_VALUE)) * 1.5;
     }
-    max_len
+    return max_len;
 }

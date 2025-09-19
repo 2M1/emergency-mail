@@ -1,4 +1,3 @@
-#![deny(clippy::implicit_return)]
 #![allow(clippy::needless_return)]
 
 use std::panic::catch_unwind;
@@ -35,8 +34,8 @@ fn poll_new_mails(
     loop {
         trace!("polling tick!");
         let res = connection.load_new_mails();
-        if res.is_err() || res.as_ref().is_ok_and(|v| !v.is_empty()) {
-            break res; // either we have new mails or an error
+        if res.is_err() || res.as_ref().is_ok_and(|v| return !v.is_empty()) {
+            return res; // either we have new mails or an error
         }
         sleep(interval);
     }

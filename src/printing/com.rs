@@ -17,5 +17,5 @@ pub fn init() -> Result<(), ()> {
 #[cfg(not(feature = "xps"))]
 pub fn init() -> Result<(), ()> {
     // empty init to keep main function untouched when not compiling for windows
-    Ok(())
+    return Ok(());
 }

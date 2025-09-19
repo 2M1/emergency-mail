@@ -20,7 +20,7 @@ pub union Size {
 
 impl Debug for Size {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        unsafe { write!(f, "{}", self.line_thickness) } // both are the same size, so it doesn't matter which one we use
+        return unsafe { write!(f, "{}", self.line_thickness) }; // both are the same size, so it doesn't matter which one we use
     }
 }
 
@@ -38,34 +38,34 @@ pub enum DocumentBuildingError {
 
 impl Display for DocumentBuildingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
+        return match self {
             DocumentBuildingError::NestedError(e) => write!(f, "{}", e),
             DocumentBuildingError::Error(e) => write!(f, "{}", e),
-        }
+        };
     }
 }
 
 impl Error for DocumentBuildingError {
     #[allow(deprecated)]
     fn description(&self) -> &str {
-        match self {
+        return match self {
             DocumentBuildingError::NestedError(e) => e.description(),
             DocumentBuildingError::Error(e) => e,
-        }
+        };
     }
 
     fn cause(&self) -> Option<&dyn Error> {
-        match self {
+        return match self {
             DocumentBuildingError::NestedError(e) => Some(e.as_ref()),
             DocumentBuildingError::Error(_) => None,
-        }
+        };
     }
 
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
+        return match self {
             DocumentBuildingError::NestedError(e) => Some(e.as_ref()),
             DocumentBuildingError::Error(_) => None,
-        }
+        };
     }
 }
 

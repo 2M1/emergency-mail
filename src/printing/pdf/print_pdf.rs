@@ -15,7 +15,7 @@ where
 
 impl<'a> PDFFilePrinter<'a> {
     pub fn new(path: &'a Path) -> Self {
-        Self { path }
+        return Self { path };
     }
 
     #[cfg(debug_assertions)]
