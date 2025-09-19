@@ -1,0 +1,24 @@
+~~Ort~~Kleinmachnow~~
+~~Ortsteil~~Dreilinden~~
+~~Ortslage~~~~
+~~Strasse~~Teerofendamm~~
+~~Hausnummer~~n/a~~
+~~Objekt~~Wald~~
+~~FWPlan~~~~
+~~Objektteil~~~~
+~~Objektnummer~~-1~~
+~~Einsatzart~~Brandeinsatz~~
+~~Alarmgrund~~B:Wald~~
+~~Sondersignal~~mit Sondersignal~~
+~~Einsatznummer~~323068367~~
+~~Besonderheiten~~Unklare Rauchentwicklung im Wald. Riecht nach Feuer. Erkundung mit Drohne.~~
+~~Name~~Mustermann, M.~~
+~~EMListe~~FL PM 01/11-01~~
+~~Status~~Tableau-Adresse~~Wache~~Fahrzeug~~Alarmiert~~Ausgerückt~~
+~~ALARM~~unbekannt#~~PM FW Kleinmachnowø~~FL PM 01/11-01~~13:00~~~~
+~~WGS84_X~~52.40806~~
+~~WGS84_Y~~13.17942~~
+~~Koord_EPSG_25833~~13.1794~~52.4080~~
+~~Koord_EPSG_4326~~E1322020~~N5240330~~
+~~Einsatzortzusatz~~Waldweg über Teerofendamm befahrbar.~~
+~~Alarmzeit~~14.06.25&13:00~~

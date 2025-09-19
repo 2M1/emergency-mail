@@ -1,3 +1,6 @@
+#![deny(clippy::implicit_return)]
+#![allow(clippy::needless_return)]
+
 use std::panic::catch_unwind;
 use std::str::FromStr;
 use std::thread::sleep;
@@ -84,7 +87,10 @@ fn run_mail_loop(config: &Config) {
 }
 
 fn main() {
-    logging::init_logging();
+    let Ok(_) = logging::init_logging() else {
+        eprintln!("couldn't initialize logging");
+        return;
+    };
     info!("starting up");
     let config_path = std::env::var("EM_CONFIG").unwrap_or("config.yaml".to_string());
     trace!("config path: {}", config_path);

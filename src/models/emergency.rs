@@ -1,6 +1,6 @@
-use chrono::NaiveDateTime;
-
 use super::{either::Either, radio_identifier::RadioIdentifier, unit_alarm_time::UnitAlarmTime};
+use chrono::LocalResult::Single;
+use chrono::{DateTime, Local, NaiveDateTime};
 
 #[derive(Debug, Default)]
 pub struct Emergency {
@@ -115,5 +115,12 @@ impl Emergency {
             s.push_str(&o.to_string());
         }
         return Some(s);
+    }
+
+    pub fn get_alarm_time(&self) -> DateTime<Local> {
+        return match self.alarm_time.and_local_timezone(Local::now().timezone()) {
+            Single(alarm_time) => alarm_time,
+            _ => Local::now(),
+        };
     }
 }

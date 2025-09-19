@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
-
+use chrono::{DateTime, Local, Utc};
 use printpdf::{Mm, PdfDocument, PdfDocumentReference};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::printing::document::{self, DocumentBuilder};
 
@@ -17,9 +17,9 @@ const A4_WIDTH: f32 = 210.0;
 const A4_HEIGHT: f32 = 297.0;
 
 impl PDFDocument {
-    pub fn new() -> Self {
+    pub fn new(ems_date: DateTime<Local>) -> Self {
         let (document, p1, l1) = PdfDocument::new(
-            "printpdf paginated example",
+            format!("Einsatz am {}", ems_date.format("%Y-%m-%d um %H:%M:%S")),
             Mm(A4_WIDTH.into()),
             Mm(A4_HEIGHT.into()),
             "Layer 1",

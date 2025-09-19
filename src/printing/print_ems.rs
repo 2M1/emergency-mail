@@ -1,4 +1,6 @@
-use chrono::Local;
+use chrono::LocalResult::Single;
+use chrono::{Local, MappedLocalTime, TimeZone};
+use log::{debug, error, info, trace};
 use std::path::PathBuf;
 use std::{
     cmp::{max, min},
@@ -7,8 +9,6 @@ use std::{
     path::Path,
     rc::Rc,
 };
-
-use log::{debug, error, info, trace};
 
 use crate::{
     config::Config,
@@ -66,7 +66,7 @@ struct AlarmTableOffsets {
 }
 
 pub fn print_emergency(ems: Emergency, config: &Config) {
-    let mut doc = PDFDocument::new();
+    let mut doc = PDFDocument::new(ems.get_alarm_time());
     create_emergency_doc(&ems, &mut doc, config);
 
     let mut ems_dir: PathBuf = if config.pdf_save_path.is_some() {
